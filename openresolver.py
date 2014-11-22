@@ -1,17 +1,14 @@
 #!/usr/bin/env python2
 
-#import socket
+from Queue import Queue
 import dns.resolver
-import thread
 import threading
 import iptools
 import sys
-from Queue import Queue
 
 
 
 class thread_resolve (threading.Thread):
-#'''just resolve a well known dns query in order to check whetever the ip hosts an open resolver'''
 
     def __init__(self, nameserver, q):
         threading.Thread.__init__(self)
@@ -22,7 +19,8 @@ class thread_resolve (threading.Thread):
 
 def resolve(nameserver, q) :
 	'''just resolve a well known dns query in order to check whetever the ip hosts an open resolver'''
-	# Set the DNS Server
+
+        # Set the DNS Server
 	resolver = dns.resolver.Resolver()
 	resolver.nameservers=[nameserver]
 	resolver.timeout = 5
@@ -40,9 +38,11 @@ def resolve(nameserver, q) :
 def main():
 
 	queue = Queue()
-	# Get ip range mask
+
+        # Get ip range mask
 	iprange = iptools.IpRangeList(sys.argv[1])
-	threads = {}
+
+        threads = {}
 
 	for ip in iprange:
 		threads[ip] = thread_resolve(ip, queue)
