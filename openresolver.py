@@ -17,7 +17,7 @@ class thread_resolve (threading.Thread):
     def run(self):
 	resolve(self.nameserver, self.q)
 
-def resolve(nameserver, q) :
+def resolve(nameserver, q=None) :
 	'''just resolve a well known dns query in order to check whetever the ip hosts an open resolver'''
 
         # Set the DNS Server
@@ -26,14 +26,18 @@ def resolve(nameserver, q) :
 	resolver.timeout = 5
 	resolver.lifetime = 5
 
-	print "resolving with %s"%(nameserver)
 	try:
+	        print "resolving with %s"%(nameserver)
 		for rdata in resolver.query('www.yahoo.com', 'CNAME') :
                         print rdata
     			print 'adding %s to the list'%(nameserver)
-			q.put(nameserver)
+                        if q :
+                            q.put(nameserver)
 	except:
 		pass
+
+def chunker(iterable, chunksize):
+        return map(None,*[iter(iterable)]*chunksize)
 
 def main():
 
@@ -59,22 +63,31 @@ def main():
                 if iptools.IpRange(sys.argv[1]).__hash__() == iptools.IpRange(net).__hash__() :
                     print 'reserved network, dumb!'
                     sys.exit()
-        # Get ip range mask
-	iprange = iptools.IpRangeList(sys.argv[1])
-        threads = {}
-	queue = Queue()
 
-	for ip in iprange:
-		threads[ip] = thread_resolve(ip, queue)
-		threads[ip].start()
+        if iptools.ipv4.validate_ip(sys.argv[1]) :
+            resolve(sys.argv[1])
 
-	for thread in threads:
-		threads[thread].join()
+        else :
 
-	try:
-		print queue.get_nowait()
-	except:
-		print "empty list: no resolvers :("
+            # Get ip range mask
+	    iprange = iptools.IpRange(sys.argv[1])
+
+	    for ip_chunks in chunker(iprange, int(sys.argv[2])) :
+                ### new dictionary and Queue ###
+                threads = {}
+	        queue = Queue()
+                for ip in ip_chunks :
+                    if ip is not None:
+	                threads[ip] = thread_resolve(ip, queue)
+	    	        threads[ip].start()
+
+	        for thread in threads:
+		    threads[thread].join()
+
+	        try:
+		    print queue.get_nowait()
+	        except:
+		    print "empty list: no resolvers :("
 
 if __name__ == "__main__":
     main()
