@@ -2,6 +2,25 @@ OpenResolver: Open DNS Resolver crawler
 ===
 
 This is a simple crawler that aim to surf the net and find open dns resolvers
+## Dependencies
+
+Python 2.7.x
+
+I'm too lazy to write what i can find already packaged :P
+I've imported a couple of library that are not in the standard python libs:
+- dnspython
+- iptools
+    
+    so:
+         pip install dnspython
+         pip install iptools
+
+    or
+
+        easy_install dnspython
+        easy_install iptools
+            
+    or you just simply download the library and then install by yourself :P
 
 ## usage
 
