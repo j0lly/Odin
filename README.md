@@ -11,11 +11,13 @@ I've imported a couple of library that are not in the standard python libs:
 - dnspython
 - iptools
 
-
     so
+    
         pip install dnspython
         pip install iptools
+        
     or
+    
         easy_install dnspython
         easy_install iptools
 
