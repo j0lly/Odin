@@ -1,7 +1,6 @@
-OpenResolver: 
+OpenResolver.py : 
 ===
-An Open DNS Resolver crawler
-==
+## An Open DNS Resolver crawler
 
 This is a simple crawler that aim to surf the net and find open dns resolvers
 ## Dependencies
