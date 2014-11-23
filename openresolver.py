@@ -71,11 +71,12 @@ def main():
 
             # Get ip range mask
 	    iprange = iptools.IpRange(sys.argv[1])
+	    queue = Queue()
+	    resolvers = []
 
 	    for ip_chunks in chunker(iprange, int(sys.argv[2])) :
                 ### new dictionary and Queue ###
                 threads = {}
-	        queue = Queue()
                 for ip in ip_chunks :
                     if ip is not None:
 	                threads[ip] = thread_resolve(ip, queue)
@@ -83,11 +84,14 @@ def main():
 
 	        for thread in threads:
 		    threads[thread].join()
+		
+		while queue.qsize() > 0:
 
-	        try:
-		    print queue.get_nowait()
-	        except:
-		    print "empty list: no resolvers :("
+		    resolvers.append(queue.get())
+	    if resolvers :
+	    	print 'I found %s resolver!'%(len(resolvers))	
+	    	print resolvers
+		print 'dumped list on file out.txt'
 
 if __name__ == "__main__":
     main()
