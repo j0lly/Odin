@@ -18,7 +18,7 @@ class thread_resolve (threading.Thread):
 	resolve(self.nameserver, self.q)
 
 def resolve(nameserver, q=None) :
-	'''just resolve a well known dns query in order to check whetever the ip hosts an open resolver'''
+	'''just resolve a well known dns query in order to check whetever the ip host is an open resolver'''
 
         # Set the DNS Server
 	resolver = dns.resolver.Resolver()
@@ -64,6 +64,7 @@ def main():
                     print 'reserved network, dumb!'
                     sys.exit()
 
+        ### real script ###
         if iptools.ipv4.validate_ip(sys.argv[1]) :
             resolve(sys.argv[1])
 
