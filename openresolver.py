@@ -16,7 +16,7 @@ import iptools
 import sys
 import argparse
 
-__version__ = '0.3'
+__version__ = '0.4'
 __author__ = 'J0lly'
 __date__ = '2014-11-23'
 __email__ = 'j0lly@anche.no'
@@ -76,17 +76,17 @@ def main():
 
         ### sanity checks ###
         if not iptools.ipv4.validate_ip(args.target) and not iptools.ipv4.validate_cidr(args.target):
-                print 'not a valid ip or network -.- '
+                print 'not a valid ip or network'
                 sys.exit()
         if iptools.ipv4.validate_ip(args.target) :
             for net in bad_networks:
                 if args.target in iptools.IpRange(net) :
-                    print 'reserved ip, dumb!'
+                    print 'reserved ip! please, select a real Ip instead try to fllod your network!'
                     sys.exit()
         elif iptools.ipv4.validate_cidr(args.target):
             for net in bad_networks:
                 if iptools.IpRange(args.target).__hash__() == iptools.IpRange(net).__hash__() :
-                    print 'reserved network, dumb!'
+                    print 'reserved network! please, select a real Ip instead try to fllod your network!'
                     sys.exit()
 
         ### real script ###
