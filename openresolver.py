@@ -37,12 +37,32 @@ def resolve(nameserver, q) :
 
 def main():
 
-	queue = Queue()
+        bad_networks = [ iptools.ipv4.PRIVATE_NETWORK_10, iptools.ipv4.LOOPBACK,
+                        iptools.ipv4.LINK_LOCAL, iptools.ipv4.IPV6_TO_IPV4_RELAY,
+                        iptools.ipv4.CURRENT_NETWORK, iptools.ipv4.DUAL_STACK_LITE,
+                        iptools.ipv4.MULTICAST, iptools.ipv4.MULTICAST_INTERNETWORK,
+                        iptools.ipv4.MULTICAST_LOCAL, iptools.ipv4.PRIVATE_NETWORK_172_16,
+                        iptools.ipv4.PRIVATE_NETWORK_192_168, iptools.ipv4.RESERVED
+                        ]
 
+        ### sanity checks ###
+        if not iptools.ipv4.validate_ip(sys.argv[1]) and not iptools.ipv4.validate_cidr(sys.argv[1]):
+                print 'not a valid ip or network -.- '
+                sys.exit()
+        if iptools.ipv4.validate_ip(sys.argv[1]) :
+            for net in bad_networks:
+                if sys.argv[1] in iptools.IpRange(net) :
+                    print 'reserved ip, dumb!'
+                    sys.exit()
+        elif iptools.ipv4.validate_cidr(sys.argv[1]):
+            for net in bad_networks:
+                if iptools.IpRange(sys.argv[1]).__hash__() == iptools.IpRange(net).__hash__() :
+                    print 'reserved network, dumb!'
+                    sys.exit()
         # Get ip range mask
 	iprange = iptools.IpRangeList(sys.argv[1])
-
         threads = {}
+	queue = Queue()
 
 	for ip in iprange:
 		threads[ip] = thread_resolve(ip, queue)
