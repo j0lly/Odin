@@ -1,7 +1,7 @@
 OpenResolver: 
 ===
 An Open DNS Resolver crawler
-====
+==
 
 This is a simple crawler that aim to surf the net and find open dns resolvers
 ## Dependencies
