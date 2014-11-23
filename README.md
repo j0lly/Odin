@@ -1,4 +1,4 @@
-OpenResolver.py : 
+OpenResolver.py
 ===
 ## An Open DNS Resolver crawler
 
@@ -22,7 +22,7 @@ I've imported a couple of library that are not in the standard python libs:
         easy_install dnspython
         easy_install iptools
 
-    or you just simply download the library and then install by yourself :P
+    or you just simply download the library and then install by yourself :P
 
 ## usage
 
