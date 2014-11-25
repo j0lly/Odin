@@ -23,14 +23,16 @@ __email__ = 'j0lly@anche.no'
 
 class thread_resolve (threading.Thread):
 
-    def __init__(self, nameserver, q):
+    def __init__(self, nameserver, q, hostname, dns_type):
         threading.Thread.__init__(self)
         self.nameserver = nameserver
 	self.q = q
+	self.hostname = hostname
+	self.dns_type = dns_type
     def run(self):
-	resolve(self.nameserver, self.q)
+	resolve(self.nameserver, self.q, self.hostname, self.dns_type)
 
-def resolve(nameserver, q=None) :
+def resolve(nameserver, q, hostname, dns_record) :
 	'''just resolve a well known dns query in order to check whetever the ip host is an open resolver'''
 
         # Set the DNS Server
@@ -41,14 +43,15 @@ def resolve(nameserver, q=None) :
 
 	try:
 	        print "resolving with %s"%(nameserver)
-		for rdata in resolver.query('www.yahoo.com', 'CNAME') :
-                        print rdata
+		for rdata in resolver.query(hostname, dns_record) :
+                        print 'we can resolve %s to %s'%(hostname, rdata)
     			print 'adding %s to the list'%(nameserver)
                         if q :
                             q.put(nameserver)
 	except:
-		pass
-
+		print 'no resolver for %s'%(nameserver)
+		sys.exit()
+	
 def chunker(iterable, chunksize):
         return map(None,*[iter(iterable)]*chunksize)
 
@@ -69,10 +72,15 @@ def main():
                         default="100", help="Set Ip Range chunk size.")
         parser.add_argument("-o", "--output", dest="output", action="store",
                         help="Output file", required=True)
+        parser.add_argument("-H", "--hostname", dest="hostname", default="www.yahoo.com", action="store",
+                        help="Hostname to resolve" )
+        parser.add_argument("-R", "--record-dns", dest="dns_type", default="CNAME", action="store",
+                        help="DNS query type")
         parser.add_argument('-v', '--version', action='version',
                                     version='%(prog)s ' + __version__)
 
         args = parser.parse_args()
+	
 
         ### sanity checks ###
         if not iptools.ipv4.validate_ip(args.target) and not iptools.ipv4.validate_cidr(args.target):
@@ -81,45 +89,48 @@ def main():
         if iptools.ipv4.validate_ip(args.target) :
             for net in bad_networks:
                 if args.target in iptools.IpRange(net) :
-                    print 'reserved ip! please, select a real Ip instead try to fllod your network!'
+                    print 'reserved ip! please, select a real Ip instead try to flood your network!'
                     sys.exit()
         elif iptools.ipv4.validate_cidr(args.target):
             for net in bad_networks:
                 if iptools.IpRange(args.target).__hash__() == iptools.IpRange(net).__hash__() :
-                    print 'reserved network! please, select a real Ip instead try to fllod your network!'
+                    print 'reserved network! please, select a real Ip instead try to flood your network!'
                     sys.exit()
 
+	###################
         ### real script ###
-        if iptools.ipv4.validate_ip(args.target) :
-            resolve(args.target)
+	###################
 
-        else :
+        # Get ip range mask
+	iprange = iptools.IpRange(args.target)
+	queue = Queue()
+	resolvers = []
 
-            # Get ip range mask
-	    iprange = iptools.IpRange(args.target)
-	    queue = Queue()
-	    resolvers = []
+	for ip_chunks in chunker(iprange, int(args.chunk)) :
+            ### new dictionary and Queue ###
+            threads = {}
+            for ip in ip_chunks :
+                if ip is not None:
+	            threads[ip] = thread_resolve(ip, queue, args.hostname, args.dns_type)
+		    threads[ip].start()
 
-	    for ip_chunks in chunker(iprange, int(args.chunk)) :
-                ### new dictionary and Queue ###
-                threads = {}
-                for ip in ip_chunks :
-                    if ip is not None:
-	                threads[ip] = thread_resolve(ip, queue)
-	    	        threads[ip].start()
+	    for thread in threads:
+		threads[thread].join()
 
-	        for thread in threads:
-		    threads[thread].join()
-
+		### getting results from piped threads ###
 		while queue.qsize() > 0:
 
-		    resolvers.append(queue.get())
-	    if resolvers :
-	    	print 'I found %s resolvers!'%(len(resolvers))
-                with open( args.output, 'w') as out_file:
-                    out_file.write("\n".join(map(lambda x: str(x), resolvers)))
-                    out_file.write("\n")
-		print 'dumped list to %s '%(args.output)
+			resolvers.append(queue.get())
+	
+	### if we found any open resolver, put it to the right output media ###
+	if resolvers :
+	    print 'I found %s resolvers!'%(len(resolvers))
+            with open( args.output, 'w') as out_file:
+                out_file.write("\n".join(map(lambda x: str(x), resolvers)))
+                out_file.write("\n")
+	    print 'dumped list to %s '%(args.output)
+	else:
+	    print 'No DNS found :('
 
 if __name__ == "__main__":
     main()
