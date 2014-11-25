@@ -16,12 +16,12 @@ import iptools
 import sys
 import argparse
 
-__version__ = '0.4'
+__version__ = '0.5'
 __author__ = 'J0lly'
 __date__ = '2014-11-23'
 __email__ = 'j0lly@anche.no'
 
-class thread_resolve (threading.Thread):
+class thread_resolve(threading.Thread):
 
     def __init__(self, nameserver, q, hostname, dns_type):
         threading.Thread.__init__(self)
@@ -37,7 +37,7 @@ def resolve(nameserver, q, hostname, dns_record) :
 
         # Set the DNS Server
 	resolver = dns.resolver.Resolver()
-	resolver.nameservers=[nameserver]
+	resolver.nameservers = [nameserver]
 	resolver.timeout = 5
 	resolver.lifetime = 5
 
@@ -46,8 +46,7 @@ def resolve(nameserver, q, hostname, dns_record) :
 		for rdata in resolver.query(hostname, dns_record) :
                         print 'we can resolve %s to %s'%(hostname, rdata)
     			print 'adding %s to the list'%(nameserver)
-                        if q :
-                            q.put(nameserver)
+                        q.put(nameserver)
 	except:
 		print 'no resolver for %s'%(nameserver)
 		sys.exit()
