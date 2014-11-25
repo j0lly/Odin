@@ -16,7 +16,7 @@ import iptools
 import sys
 import argparse
 
-__version__ = '0.5'
+__version__ = '0.7'
 __author__ = 'J0lly'
 __date__ = '2014-11-23'
 __email__ = 'j0lly@anche.no'
@@ -40,17 +40,32 @@ def resolve(nameserver, q, hostname, dns_record) :
 	resolver.nameservers = [nameserver]
 	resolver.timeout = 5
 	resolver.lifetime = 5
+	print "resolving with %s"%(nameserver)
 
 	try:
-	        print "resolving with %s"%(nameserver)
-		for rdata in resolver.query(hostname, dns_record) :
-                        print 'we can resolve %s to %s'%(hostname, rdata)
-    			print 'adding %s to the list'%(nameserver)
-                        q.put(nameserver)
-	except:
+		rdata = resolver.query(hostname, dns_record)
+	
+	except dns.resolver.NoAnswer :
 		print 'no resolver for %s'%(nameserver)
 		sys.exit()
+	except dns.rdatatype.UnknownRdatatype :
+		print 'bad Record Type %s'%(dns_record)
+		sys.exit()
+	except dns.resolver.NXDOMAIN :
+		print '%s is not existent'%(hostname)
+		sys.exit()
+	except dns.exception.Timeout :
+		print 'timeout while performing query on %s'%(nameserver)
+		sys.exit()
+	except :
+		print 'Unknown error'
+		sys.exit()
 	
+	#rdata.response for complete response body
+	print 'we can resolve %s'%(hostname)
+    	print 'adding %s to the list'%(nameserver)
+	q.put(nameserver)	
+
 def chunker(iterable, chunksize):
         return map(None,*[iter(iterable)]*chunksize)
 
