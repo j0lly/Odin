@@ -1,16 +1,16 @@
-OpenResolver.py
+Odin: Open Dns  INspector
 ===
-## An Open DNS Resolver crawler
 
-This is a simple crawler that aim to surf the net and find open dns resolvers
+This is a simple Open DNS crawler that aim to surf the net and find open dns resolvers
 ## Dependencies
 
 Python 3.x
 
 I'm too lazy to write what i can find already packaged :P
 I've imported a couple of library that are not in the standard python libs:
-- dnspython3
-- iptools
+
+* dnspython3
+* iptools
 
     so
     
