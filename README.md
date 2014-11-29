@@ -29,21 +29,22 @@ I've imported a couple of library that are not in the standard python libs:
     usage: openresolver.py [-h] -t TARGET [-c CHUNK] -o OUTPUT [-n HOSTNAME]
                        [-r DNS_TYPE] [-v]
 
-OpenResolver: an Open DNS Resolver crawler.
+    OpenResolver: an Open DNS Resolver crawler.
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -t TARGET, --target TARGET
-                        Set target: IP or CIDR range.
-  -c CHUNK, --chunk CHUNK
-                        Set Ip Range chunk size.
-  -o OUTPUT, --output OUTPUT
-                        Output file
-  -n HOSTNAME, --name HOSTNAME
-                        Hostname to resolve
-  -r DNS_TYPE, --record DNS_TYPE
-                        DNS query type
-  -v, --version         show program's version number and exit
+    optional arguments:
+
+      -h, --help            show this help message and exit
+      -t TARGET, --target TARGET
+                            Set target: IP or CIDR range.
+      -c CHUNK, --chunk CHUNK
+                            Set Ip Range chunk size.
+      -o OUTPUT, --output OUTPUT
+                            Output file
+      -n HOSTNAME, --name HOSTNAME
+                            Hostname to resolve
+      -r DNS_TYPE, --record DNS_TYPE
+                            DNS query type
+      -v, --version         show program's version number and exit
 
 ##  Examples
 
