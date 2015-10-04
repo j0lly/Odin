@@ -7,7 +7,7 @@
 # Open DNS Resolver crwaler
 # For fun and profit
 #
-# Lcense BSD
+# License BSD
 
 from queue import Queue
 import dns.resolver
