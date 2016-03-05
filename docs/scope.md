@@ -26,25 +26,22 @@
 
 * provide a way to store DNS related data in a consistent way
 * provide a method to retrive data from the datastore in a serialized way
-* provide a cli for data mining/quering samples
+* provide an api endpoint for data mining/quering
 * provide a library for standard batch mining operations
 * provide a methode to efficently query the Web without being hardly trottled
-* provide an estimation of the actual scan batch chunck timing
 
 ### not in scope
 
 * provide a way to graph the data collected
 * a tool to scan the Web in 5 minutes
-* a Rest API to quary the datastore
 
 ## Roadmap
 
     mvp
 1. ship a simple miner module
 2. ship a facade able to output data to stout or file
-3. ship a cli
+3. ship an api
 4. ship a complate miner
 5. ship a complate facade with storage modules
     nth
-1. provides a way to deamonize the processes
-2. provides a service API for batch submission/data retrival
+1. provides a service API for batch submission/data retrival

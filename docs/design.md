@@ -1,6 +1,7 @@
 # Design Doc
 
 2016-02-27 V 0.1
+2016-03-05 V 0.2
 
 ## Overview
 
@@ -17,7 +18,7 @@ interact with the stored data and retrive various informations.
 
 1. a module that mine the Web and gether data relatives to Open DNS resolvers
 2. a module/facade able to serialize put/get requests to the datastore
-3. a cli to perform data mining/retrival for samples porpouses
+3. an api to perform data mining/retrival
 
 #### miner
 
@@ -42,18 +43,17 @@ write capabilities to the consumer in a standard way.
 * provide store agnostic calls to the datastore
 * able to retrive data over the dataset of DNS information
 
-#### cli
+#### api
 
-The cli is a convinient way to test the libraries and provide samples over data
-mining/storing/quering. It implement also the possibility to query a miner
-batch and retrive the actual state for the scan and the duration estimates.
+The api is a convinient way to test the libraries and provide samples over data
+mining/storing/quering. ***It implement also the possibility to query a miner
+batch and retrive the actual state for the scan and the duration estimates.***
 
 ###### requirements:
 
-* provides a command line interface to use and test both miner and facade.
+* provides an API interface to use and test both miner and facade.
 * query and exisiting miner job for scan time duration and estimation.
 * ability to produce small scan samples
-* ability to show samples data over the screen
 * store data in any of the supported data store
 
 ## Design
@@ -75,7 +75,7 @@ with a miner worker and retrive data about the scan and the ongoing process.
 
 #### Examples:
 
-    worker1 = Miner.worker(type='async')
+    worker1 = Miner.Worker(wtype='async')
     worker1.batch('10.0.0.0/16')
     ret = worker1.retrive(duration=1, scanned_hosts=1)
     
