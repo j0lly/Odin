@@ -75,7 +75,7 @@ with a miner worker and retrive data about the scan and the ongoing process.
 
 #### Examples:
 
-    worker1 = Miner.Worker(wtype='async')
+    worker1 = Worker(wtype='async')
     worker1.batch('10.0.0.0/16')
     ret = worker1.retrive(duration=1, scanned_hosts=1)
     
@@ -83,7 +83,7 @@ with a miner worker and retrive data about the scan and the ongoing process.
     { 'duration': 71, 'scanned_hosts': 1376 }
 
     w_socket = worker1.__endpoint__
-    checker = Miner.worker(socket=w_socket)
+    checker = worker(socket=w_socket)
     ret = checker.retrive( scanned_hosts=1, time_left=1, finished=1)
     
     print(ret)
@@ -107,7 +107,8 @@ with a miner worker and retrive data about the scan and the ongoing process.
 
 ----------------------------------------------------------
 
-    scan = Miner.scan('10.0.0.0/24')
+    scan = odin.Worker('10.0.0.0/24')
+    scan.scan()
     
     print(scan)
     {'10.0.0.1': {'timestamp': 1456603659,

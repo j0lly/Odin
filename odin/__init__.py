@@ -8,6 +8,5 @@
     :license: BSD, see LICENSE for more details.
 """
 
-#from .static import __version__, __author__
 from .core import findip
-from .worker import Worker
+from .store import Store

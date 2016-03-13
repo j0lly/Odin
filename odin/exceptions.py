@@ -11,3 +11,11 @@
 class TooManyIPsException(Exception):
     '''Too many ip addresses passed to a single scan'''
     pass
+
+class OdinNotYetImplemented(Exception):
+    '''placeholder for functionalities not yet implemented'''
+    pass
+
+class StoreBadParameter(Exception):
+    ''' bad parameter passed to store '''
+    pass
