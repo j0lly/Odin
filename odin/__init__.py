@@ -9,4 +9,5 @@
 """
 
 from .core import findip
-from .store import Store
+from .store import OpenDnsModel
+from .worker import Worker

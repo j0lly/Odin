@@ -2,3 +2,4 @@ python3
 time
 dnspython3
 ipaddress
+pynamodb

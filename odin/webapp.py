@@ -1,18 +1,10 @@
 import flask
+from .store import OpenDnsModel
 
 app = flask.Flask(__name__)
 
-@app.route('/sync/<ip>')
+@app.route('/show/<ip>')
 def sync_resolve(ip):
-    for resource in ip:
-        try:
-            s = resolver.Resolve(resource)
-            dns = s.resolve()
-        except:
-            return flask.jsonify({resource: 'NaN'})
-        try:
-            version = s.version()
-        except:
-            pass
-    res = {ip: {**dns, **version}}
-    return flask.jsonify(**res)
+    s = OpenDnsModel(ip)
+    s.dns_scan()
+    return flask.jsonify(s.attribute_values)

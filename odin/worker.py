@@ -4,55 +4,8 @@
 this module provide the worker object; an asyncronous dns data miner
 '''
 
-import time
+import datetime
 import dns.resolver
-from .exceptions import TooManyIPsException
-
-class Worker(object):
-    ''' create a Worker onbejct, able to open a socket and run a batch '''
-
-    def __init__(self, ip_range, worker='async'):
-        self.ip_list = ip_range
-        self.worker = worker
-
-    def __endpoint__(self):
-        return None
-
-    def retrive(self):
-        return None
-
-    def batch(self):
-        return None
-
-    def scan(self):
-        ''' make a simple scan for test porpouses; No more than 128 IPs will be
-            scanned. It returns a dictionary wit ip and status (dns or open resolver)
-        :param ip_list: list of IPs to be scanned for open Resolvers
-        :type ip_list: list
-        :returns: a dictionary with the result of the scan
-        :rtype: dict
-        '''
-        if len(self.ip_list) > 128:
-            raise TooManyIPsException('scan() is suppoused to run over a \
-                    maximum of 128 IPs. Use batch() for bigger chunks')
-        result = list()
-        for ip_target in self.ip_list:
-            timestamp = dict(timestamp=int(time.time()))
-            target = Resolve(ip_target)
-            try:
-                info = target.resolve()
-            except:
-                #need to be catched
-                raise
-            if info['is_dns'] is True:
-                try:
-                    version = target.version()
-                except:
-                    raise
-            else:
-                version = dict(version=False)
-            result.append({ip_target: {**info, **version, **timestamp}})
-        return result
 
 
 class Resolve(object):
@@ -63,12 +16,13 @@ class Resolve(object):
     :type target: str
     '''
 
-    def __init__(self, target):
+    def __init__(self, target, *args, timeout=1, lifetime=1, **kwargs):
+        super(Resolve, self).__init__(*args, **kwargs)
 
-        self.resolver = dns.resolver.Resolver()
-        self.resolver.nameservers = [target]
-        self.resolver.timeout = 2
-        self.resolver.lifetime = 2
+        self._resolver = dns.resolver.Resolver()
+        self._resolver.nameservers = [target]
+        self._resolver.timeout = timeout
+        self._resolver.lifetime = lifetime
 
     def resolve(self, timeout=None, record='www.yahoo.com', rtype='CNAME'):
         ''' perform a dns query against the target and retrive the answer.
@@ -83,26 +37,22 @@ class Resolve(object):
         '''
 
         if timeout:
-            self.resolver.timeout = timeout
-        is_dns = False
-        is_resolver = False
+            self._resolver.timeout = timeout
         try:
-            self.resolver.query(record, rtype)
-            is_dns = True
-            is_resolver = True
+            self._resolver.query(record, rtype)
+            return (True, True)
         except dns.resolver.NoAnswer:
             #print('no resolver for %s'%(nameserver))
-            is_dns = True
+            return (True, False)
         except dns.exception.Timeout:
             # assumes no DNS behind IP
-            pass
+            return (False, False)
         #NXDOMAIN and so on
         except:
             raise
-        return dict(is_dns=is_dns, is_resolver=is_resolver)
 
 
-    def version(self, timeout=None):
+    def dns_version(self, timeout=None):
         ''' scan target for version
         :param timeout: set a timeout for the DNS resolution
         :type timeout: int
@@ -110,11 +60,40 @@ class Resolve(object):
         :rtype: dict
         '''
         if timeout:
-            self.resolver.timeout = timeout
+            self._resolver.timeout = timeout
         try:
-            answer = self.resolver.query('version.bind', 'TXT', 'CHAOS')
+            answer = self._resolver.query('version.bind', 'TXT', 'CHAOS')
         except dns.resolver.NoNameservers:
             raise
         except dns.exception.Timeout:
-            return dict(version=False)
-        return dict(version=answer[0].strings[0]) #return version string for NS
+            return None
+        return answer[0].strings[0] #return version string for NS
+
+
+class Worker(Resolve):
+    ''' create a Worker object, able to open a socket and run a batch '''
+
+    is_resolver = False
+    is_dns = False
+    version = None
+    timestamp = datetime.datetime.now()
+
+    def __init__(self, ip, *args, **kwargs):
+        super(Worker, self).__init__(ip, *args, **kwargs)
+        self.ip = ip
+    def dns_scan(self, version=True):
+        ''' make a simple scan for test porpouses; No more than 128 IPs will be
+            scanned. It returns a dictionary wit ip and status (dns or open resolver)
+        :param ip_list: list of IPs to be scanned for open Resolvers
+        :type ip_list: list
+        :returns: a dictionary with the result of the scan
+        :rtype: dict
+        '''
+        self.is_dns, self.is_resolver = self.resolve()
+        self.timestamp = datetime.datetime.now()
+        if version and self.is_dns:
+            self.version = self.dns_version()
+
+        return self.__dict__
+
+
