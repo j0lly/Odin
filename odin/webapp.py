@@ -1,6 +1,7 @@
 import flask
+import queue
 from flask import request
-from .store import OpenDnsModel
+from .store import OpenDnsModel, ThreadedModel
 from .core import findip
 
 app = flask.Flask(__name__)
@@ -14,6 +15,8 @@ def sync_resolve(ip):
 @app.route('/scan/')
 def net_scan():
     result = {}
+    threads = []
+    my_queue = queue.Queue()
     try:
         ip_range = request.args.get('range')
     except:
@@ -23,8 +26,15 @@ def net_scan():
     except:
         return 'invalid ip range provided!'
     for ip in ips:
-        s = OpenDnsModel(ip)
-        s.dns_scan()
-        result.update({s.ip: s.attribute_values})
+        s = ThreadedModel(ip, queue=my_queue)
+        s.daemon=True
+        threads.append(s)
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=4)
+    while not my_queue.empty():
+        chunk = my_queue.get()
+        result.update({chunk['ip'] : chunk})
     return flask.jsonify(result)
 
