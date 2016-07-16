@@ -2,13 +2,14 @@
 
 2016-02-27 V 0.1
 2016-03-05 V 0.2
+2016-07-15 V 0.3
 
 ## Overview
 
-Odin [Open Dns INspector] is a library that implement standard methods to batch
-quaring the Web and retrive information about Open DNS resolvers and store
-those information in a persistent layer. Odin also provides a facade to
-interact with the stored data and retrive various informations.
+Odin [Open Dns INspector] is a set of tools and libraries that implement standard methods to batch
+quaring the Web and retrive information about Open DNS resolvers and optionally store
+those information in a persistent layer. Odin provides a Layered library that
+provides the needed functionalities and can be used at various layers.
 
 ## Architecture
 
@@ -17,8 +18,8 @@ interact with the stored data and retrive various informations.
 ### functional specifications
 
 1. a module that mine the Web and gether data relatives to Open DNS resolvers
-2. a module/facade able to serialize put/get requests to the datastore
-3. an api to perform data mining/retrival
+2. a cli able to perform data mining/retrieval
+3. an api to perform data mining/retrieval
 
 #### miner
 

@@ -10,7 +10,7 @@
 > about actual Open DNSs and their quantity/geographical location.
 >
 > Odin aims to scan the outside world looking for open resolver's Nameservers
-> and store IP and othere relevant data in a datastore for future statistical
+> and store IP and others relevant data in a datastore for future statistical
 > researches.
 >
 > Odin will be also able to continuosly monitor the actual data,
@@ -29,6 +29,7 @@
 * provide an api endpoint for data mining/quering
 * provide a library for standard batch mining operations
 * provide a methode to efficently query the Web without being hardly trottled
+* provide a to run the same queries / scan from the termianl
 
 ### not in scope
 
@@ -39,9 +40,7 @@
 
     mvp
 1. ship a simple miner module
-2. ship a facade able to output data to stout or file
+2. ship a facade able to output data to stout, file or a datastore
 3. ship an api
-4. ship a complate miner
-5. ship a complate facade with storage modules
-    nth
-1. provides a service API for batch submission/data retrival
+4. provides a service API for batch submission/data retrival
+5. provides a cli for batch submission/data retrival

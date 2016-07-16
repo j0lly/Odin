@@ -2,6 +2,14 @@ Odin: Open Dns  INspector
 ===
 
 This is a simple Open DNS crawler that aim to surf the net and find open dns resolvers
+
+The package include a cli for simple scans and a simple flask webapp; in both
+cases the tool provides options to store the results into DynamoDB (also
+locally) and retrieve aggregated / historical data.
+
+The application is multi threaded: be wise when using 10k thread to spawn
+connections into the wild :p
+
 ## Dependencies
 
 Python 3.x
@@ -11,18 +19,6 @@ I've imported a couple of library that are not in the standard python libs:
 
 * dnspython3
 * iptools
-
-    so
-    
-        pip install dnspython3
-        pip install iptools
-        
-    or
-    
-        easy_install dnspython3
-        easy_install iptools
-
-    or you just simply download the library and then install by yourself :P
 
 ## usage
 
