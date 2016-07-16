@@ -8,6 +8,5 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from .core import findip
-from .store import OpenDnsModel
-from .worker import Worker
+from .utils import findip
+from .webapp import app
