@@ -44,8 +44,8 @@ def test_args(args):
     targets = utils.findip(args.target)
     assert len(targets) <= 256 or args.output
     #TODO tests on output file
-    output = os.path.abspath(args.output)
-    assert not os.path.exists(output)
+    if args.output:
+        assert not os.path.exists(args.output)
     assert args.chunk > 1 and args.chunk <= 1024
     result = utils.chunker(targets, args.chunk)
     if args.filter:
@@ -81,6 +81,9 @@ def main():
                 result.update({ip_info['ip'] : ip_info})
             elif ip_info.get(args.filter):
                 result.update({ip_info['ip'] : ip_info})
+    if args.output:
+        with open(args.output, 'w') as output:
+            output.write(str(result))
     pprint(result)
 
 
