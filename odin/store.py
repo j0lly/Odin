@@ -3,10 +3,12 @@
 abstraction layer for storing miner results
 '''
 import threading
-from .worker import Worker
 from pynamodb.models import Model
 from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
-from pynamodb.attributes import UTCDateTimeAttribute, UnicodeAttribute, BooleanAttribute
+from pynamodb.attributes import (UTCDateTimeAttribute, UnicodeAttribute,
+                                 BooleanAttribute)
+from .worker import Worker
+from .static import TABLE, G_SEC_INDEX
 
 class NetMasks(GlobalSecondaryIndex):
     """
@@ -14,7 +16,7 @@ class NetMasks(GlobalSecondaryIndex):
     """
     class Meta:
         # index_name is optional, but can be provided to override the default name
-        index_name = 'NetMaskOD'
+        index_name = G_SEC_INDEX
         read_capacity_units = 5
         write_capacity_units = 5
         # All attributes are projected
@@ -30,7 +32,7 @@ class NetMasks(GlobalSecondaryIndex):
 class OpenDnsModel(Worker, Model):
     ''' Model for Dns inserts '''
     class Meta:
-        table_name = 'OpenDns'
+        table_name = TABLE
         host = 'http://127.0.0.1:8000'
 
     ip = UnicodeAttribute(hash_key=True)
@@ -47,7 +49,7 @@ class OpenDnsModel(Worker, Model):
 
 class ThreadedModel(OpenDnsModel, threading.Thread):
     class Meta:
-        table_name = 'OpenDns'
+        table_name = TABLE
         host = 'http://127.0.0.1:8000'
 
     ip = UnicodeAttribute(hash_key=True)
