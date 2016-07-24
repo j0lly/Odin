@@ -23,23 +23,6 @@ class Worker(object):
         self._resolver.timeout = timeout
         self._resolver.lifetime = lifetime
 
-    def dns_scan(self, version=True):
-        """ make a simple scan for test porpouses; No more than 128 IPs will be
-        scanned. It returns a dictionary with
-        ip and status (dns or open resolver)
-
-        :param ip_list: list of IPs to be scanned for open Resolvers
-        :type ip_list: list
-        :returns: a dictionary with the result of the scan
-        :rtype: dict
-        """
-        self.is_dns, self.is_resolver = self.resolve()
-        self.timestamp = datetime.datetime.now()
-        if version and self.is_dns:
-            self.version = self.dns_version()
-
-        return self.__dict__
-
     def resolve(self, timeout=None, record='www.yahoo.com', rtype='CNAME'):
         """ perform a dns query against the target and retrive the answer.
         :param timeout: set a timeout for the DNS resolution
@@ -79,3 +62,20 @@ class Worker(object):
         except dns.exception.Timeout:
             return None
         return answer[0].strings[0]  # return version string for NS
+
+    def dns_scan(self, version=True):
+        """ make a simple scan for test porpouses; No more than 128 IPs will be
+        scanned. It returns a dictionary with
+        ip and status (dns or open resolver)
+
+        :param ip_list: list of IPs to be scanned for open Resolvers
+        :type ip_list: list
+        :returns: a dictionary with the result of the scan
+        :rtype: dict
+        """
+        self.is_dns, self.is_resolver = self.resolve()
+        self.timestamp = datetime.datetime.now()
+        if version and self.is_dns:
+            self.version = self.dns_version()
+
+        return self.__dict__
