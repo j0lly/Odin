@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
-""" collection of helpers for Miner module """
+"""collection of helpers for Miner module."""
 
 import ipaddress
+
 
 def findip(string):
     """calculate hosts to be scanned; it's just an helper.
@@ -34,4 +35,5 @@ def chunker(iterable, chunk_size):
     :returns: list of chunks for previous iterable
     :rtype: list
     """
-    return  [iterable[x:x+chunk_size] for x in  range(0, len(iterable), chunk_size)]
+    return [iterable[x:x+chunk_size] for x in range(
+        0, len(iterable), chunk_size)]

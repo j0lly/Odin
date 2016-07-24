@@ -8,7 +8,6 @@ import os
 import argparse
 import queue
 import tempfile
-from argparse import RawTextHelpFormatter
 from pprint import pprint
 from odin.store import ThreadedModel
 from odin.static import __version__
@@ -46,6 +45,7 @@ def get_args():
 
     return parser.parse_args()
 
+
 def test_args(args):
     """ test the passed arguments against sane values.
 
@@ -56,10 +56,11 @@ def test_args(args):
     """
 
     targets = utils.findip(args.target)
-    #assert len(targets) <= 256 or args.output
-    #TODO tests on output file
+    # assert len(targets) <= 256 or args.output
+    # TODO tests on output file
     if args.output:
-        assert not os.path.isdir(args.output), 'specify a file, not a directory.'
+        assert not os.path.isdir(
+             args.output), 'specify a file, not a directory.'
         assert tempfile.TemporaryFile(dir=os.path.dirname(args.output)), (
             'You have no permission to write.')
     assert args.chunk > 1 and args.chunk <= 1024, (
@@ -69,7 +70,6 @@ def test_args(args):
         'You have to specify a filter in: is_dns, is_resolver, version, all.')
 
     return result
-
 
 
 def main():
@@ -95,9 +95,9 @@ def main():
         while not my_queue.empty():
             ip_info = my_queue.get()
             if args.filter == 'all':
-                result.update({ip_info['ip'] : ip_info})
+                result.update({ip_info['ip']: ip_info})
             elif ip_info.get(args.filter):
-                result.update({ip_info['ip'] : ip_info})
+                result.update({ip_info['ip']: ip_info})
     if args.output:
         if os.path.exists(args.output):
             answer = input('file {} exist: overwrite? '.format(args.output))
@@ -107,9 +107,7 @@ def main():
             else:
                 print('\nnot overwriting the file; print to stout only\n')
 
-    print(result)
-
-
+    pprint(result)
 
 
 if __name__ == "__main__":

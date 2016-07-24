@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-''' fixed variables stay here '''
+
+"""fixed variables stay here."""
 
 __version__ = '0.3'
 __author__ = 'J0lly'

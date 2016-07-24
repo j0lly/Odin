@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+
 '''
 abstraction layer for storing miner results
 '''
+
 import threading
 from pynamodb.models import Model
 from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
@@ -10,12 +12,12 @@ from pynamodb.attributes import (UTCDateTimeAttribute, UnicodeAttribute,
 from .worker import Worker
 from .static import TABLE, G_SEC_INDEX
 
+
 class NetMasks(GlobalSecondaryIndex):
     """
     This class represents a global secondary index
     """
     class Meta:
-        # index_name is optional, but can be provided to override the default name
         index_name = G_SEC_INDEX
         read_capacity_units = 5
         write_capacity_units = 5
@@ -42,6 +44,7 @@ class OpenDnsModel(Worker, Model):
     is_resolver = BooleanAttribute(default=False)
     version = UnicodeAttribute(default=None)
     netmasks = NetMasks()
+
     def __init__(self, *args, **kwargs):
         super(OpenDnsModel, self).__init__(*args, **kwargs)
         self.netmask = '.'.join(self.ip.split('.')[0:2])
@@ -69,5 +72,3 @@ class ThreadedModel(OpenDnsModel, threading.Thread):
         self.dns_scan(version)
         self.queue.put(self.attribute_values, block, timeout)
         self.queue.task_done()
-
-
