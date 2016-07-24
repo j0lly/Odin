@@ -5,10 +5,11 @@ python:
   - "pypy"
 
 env:
-  - AWS_SECRET_ACCESS_KEY=fake_key AWS_ACCESS_KEY_ID=fake_id
+  - AWS_SECRET_ACCESS_KEY=fake_key AWS_ACCESS_KEY_ID=fake_id TOX_ENV=py35
+  - AWS_SECRET_ACCESS_KEY=fake_key AWS_ACCESS_KEY_ID=fake_id TOX_ENV=flake8
 
 install:
   - pip install tox
 
 script:
-  - tox
+  - tox $TOX_ENV
