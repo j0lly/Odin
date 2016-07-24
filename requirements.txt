@@ -1,7 +1,5 @@
 ### Odin requirements
-python3>=3.5
 Flask==0.10.1
 dnspython3==1.12.0
-pytest==2.8.7
-pytest-cov==2.2.1
 pynamodb==1.5.2
+moto==0.4.25

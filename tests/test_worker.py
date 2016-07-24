@@ -9,5 +9,5 @@ from odin.worker import Worker
 
 
 def test_worker_ip_range():
-    worker = odin.Worker('string')
+    worker = Worker('192.168.0.1')
 

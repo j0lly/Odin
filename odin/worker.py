@@ -17,7 +17,6 @@ class Worker(object):
     timestamp = datetime.datetime.now()
 
     def __init__(self, ip, *args, timeout=1, lifetime=1, **kwargs):
-        super(Worker, self).__init__(ip, *args, **kwargs)
         self.ip = ip
         self._resolver = dns.resolver.Resolver()
         self._resolver.nameservers = [ip]
