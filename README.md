@@ -1,6 +1,8 @@
 Odin: Open Dns  INspector
 ===
 
+[![Build Status](https://travis-ci.org/j0lly/Odin.svg?branch=master)](https://travis-ci.org/j0lly/Odin)
+
 This is a simple Open DNS crawler that aim to surf the net and find open dns resolvers
 
 The package include a cli for simple scans and a simple flask webapp; in both
