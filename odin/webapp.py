@@ -15,6 +15,12 @@ app = flask.Flask(__name__)
 
 @app.route('/show/<ip>')
 def sync_resolve(ip):
+    """Perform a single ip lookup
+
+    :param ip: the ip passed in url
+    :type ip: str
+    """
+    # TODO: sanity checks
     show = OpenDnsModel(ip)
     show.dns_scan()
     return flask.jsonify(show.attribute_values)
@@ -22,6 +28,8 @@ def sync_resolve(ip):
 
 @app.route('/scan/')
 def net_scan():
+    """Perform a scan of a CIDR range provided as param and return it."""
+
     result = {}
     threads = []
     my_queue = queue.Queue()

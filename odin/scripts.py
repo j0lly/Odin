@@ -15,7 +15,7 @@ from odin import utils
 
 
 def get_args():
-    """ parse input. """
+    """Parse input parameters"""
 
     parser = argparse.ArgumentParser(
         description='{0}{1}{2}{3}{4}{5}{6}'.format(

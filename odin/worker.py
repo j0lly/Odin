@@ -25,6 +25,7 @@ class Worker(object):
 
     def resolve(self, timeout=None, record='www.yahoo.com', rtype='CNAME'):
         """ perform a dns query against the target and retrive the answer.
+
         :param timeout: set a timeout for the DNS resolution
         :type timeout: int
         :param record: subject of the query
@@ -48,6 +49,7 @@ class Worker(object):
 
     def dns_version(self, timeout=None):
         """ scan target for version
+
         :param timeout: set a timeout for the DNS resolution
         :type timeout: int
         :returns: return version and type

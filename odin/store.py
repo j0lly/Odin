@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
-'''
+"""
 abstraction layer for storing miner results
-'''
+"""
 
 import threading
+import queue
 from pynamodb.models import Model
 from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
 from pynamodb.attributes import (UTCDateTimeAttribute, UnicodeAttribute,
@@ -32,7 +33,7 @@ class NetMasks(GlobalSecondaryIndex):
 
 
 class OpenDnsModel(Worker, Model):
-    ''' Model for Dns inserts '''
+    """ Model for dns objects """
     class Meta:
         table_name = TABLE
         host = 'http://127.0.0.1:8000'
@@ -51,6 +52,7 @@ class OpenDnsModel(Worker, Model):
 
 
 class ThreadedModel(OpenDnsModel, threading.Thread):
+    """ Model for dns objects """
     class Meta:
         table_name = TABLE
         host = 'http://127.0.0.1:8000'
@@ -69,6 +71,19 @@ class ThreadedModel(OpenDnsModel, threading.Thread):
         super(ThreadedModel, self).__init__(*args, **kwargs)
 
     def run(self, version=True, block=True, timeout=2):
+        """ overwrite run method with our
+
+        :param version: tell dns_scan method to scan for dns server version
+        :type version: bool
+        :param block: tell the queue to block until queue can accept item
+        :type block: bool
+        :param timeout: timeout to apply to block before raising Full exception
+        :type timeout: int
+        """
         self.dns_scan(version)
-        self.queue.put(self.attribute_values, block, timeout)
+        try:
+            self.queue.put(self.attribute_values, block, timeout)
+        except queue.Full:
+            # TODO: logging here
+            pass
         self.queue.task_done()
