@@ -2,3 +2,5 @@
 __cache__/**
 .cache
 .tox
+odin.egg-info
+.coverage

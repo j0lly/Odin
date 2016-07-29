@@ -15,7 +15,11 @@ from odin import utils
 
 
 def get_args():
-    """Parse input parameters"""
+    """Parse input parameters
+
+    :returns: an Namespace object with inputted arguments
+    :rtype: argparse.Namespace
+    """
 
     parser = argparse.ArgumentParser(
         description='{0}{1}{2}{3}{4}{5}{6}'.format(
@@ -73,7 +77,10 @@ def test_args(args):
 
 
 def main():
-    """ the main script. """
+    """ the main script.
+
+    It loops over a list of IPs and perform name resolution.
+    """
     args = get_args()
 
     targets = test_args(args)
