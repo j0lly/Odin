@@ -17,6 +17,7 @@ class Worker(object):
     timestamp = datetime.datetime.now()
 
     def __init__(self, ip, *args, timeout=1, lifetime=1, **kwargs):
+        super(Worker, self).__init__(*args, **kwargs)
         self.ip = ip
         self._resolver = dns.resolver.Resolver()
         self._resolver.nameservers = [ip]
@@ -79,5 +80,5 @@ class Worker(object):
         self.timestamp = datetime.datetime.now()
         if version and self.is_dns:
             self.version = self.dns_version()
-
+        # TODO: need to return something useful of nothing at all!
         return True

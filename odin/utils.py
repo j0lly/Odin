@@ -20,10 +20,10 @@ def findip(string):
     except ipaddress.NetmaskValueError:
         raise
     if ip_range.num_addresses == 1:
-        yield ip_range.network_address.compressed
+        return ip_range.network_address.compressed
     else:
         for k in ip_range.hosts():
-            yield k.compressed
+            return k.compressed
 
 
 def chunker(iterable, chunk_size):
