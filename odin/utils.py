@@ -10,8 +10,8 @@ def findip(string):
 
     :param string: ip range in cidr notation
     :type string: str
-    :returns: a generator of IPs to be scanned
-    :rtype: generator
+    :returns: a list of IPs to be scanned
+    :rtype: list
     """
     try:
         ip_range = ipaddress.IPv4Network(string, strict=False)
@@ -20,10 +20,9 @@ def findip(string):
     except ipaddress.NetmaskValueError:
         raise
     if ip_range.num_addresses == 1:
-        return ip_range.network_address.compressed
+        return [ip_range.network_address.compressed]
     else:
-        for k in ip_range.hosts():
-            return k.compressed
+        return [k.compressed for k in ip_range.hosts()]
 
 
 def chunker(iterable, chunk_size):

@@ -30,22 +30,45 @@ def get_args():
             'thread pool number to spawn to process the requests. (bare in ',
             'mind your ISP could easely throttle you out if you burst to much',
             'traffic in a single run!)'))
-    parser.add_argument("-t", "--target", dest="target",
-                        action="store", type=str, default=None,
-                        help="Set target: IP or CIDR range.", required=True)
-    parser.add_argument("-c", "--chunk", dest="chunk", action="store",
-                        default=50, type=int,
-                        help="Set Ip Range chunk size; 1024 max.")
-    parser.add_argument("-o", "--output", dest="output", action="store",
-                        help="Output file", required=False)
-    parser.add_argument("-f", "--filter", dest="filter", action="store",
-                        help='{} {} {}'.format(
-                            "show only if target is (or has):",
-                            "is_dns, is_resolver, version, all.",
-                            "It defaults to 'is_dns'."),
-                        required=False, default='is_dns', type=str)
-    parser.add_argument('-v', '--version', action='version',
-                        version='%(prog)s ' + __version__)
+    parser.add_argument("-V", "--version", action="version",
+                        version="%(prog)s " + __version__)
+    subparsers = parser.add_subparsers(dest='subparser')
+    scan = subparsers.add_parser('scan',
+                                 description="{}{}{}".format(
+                                     "Perform a scan and return the ",
+                                     "result, optionally save the ",
+                                     "scan into the DB"))
+    scan.add_argument("-t", "--target", dest="target",
+                      action="store", type=str, default=None,
+                      help="Set target: IP or CIDR range.", required=True)
+    scan.add_argument("-c", "--chunk", dest="chunk", action="store",
+                      default=50, type=int,
+                      help="Set Ip Range chunk size; 1024 max.")
+    scan.add_argument("-o", "--output", dest="output", action="store",
+                      help="Output file", required=False)
+    scan.add_argument("-f", "--filter", dest="filter", action="store",
+                      help='{} {} {}'.format(
+                          "show only if target is (or has):",
+                          "is_dns, is_resolver, version, all.",
+                          "It defaults to 'is_dns'."),
+                      required=False, default='is_dns', type=str)
+    scan.add_argument("-v", "--verbose", action="count")
+    query = subparsers.add_parser('query',)
+    query.add_argument("-t", "--target", dest="target",
+                       action="store", type=str, default=None,
+                       help="Set target: IP or CIDR range.", required=True)
+    query.add_argument("-c", "--chunk", dest="chunk", action="store",
+                       default=50, type=int,
+                       help="Set Ip Range chunk size; 1024 max.")
+    query.add_argument("-o", "--output", dest="output", action="store",
+                       help="Output file", required=False)
+    query.add_argument("-f", "--filter", dest="filter", action="store",
+                       help='{} {} {}'.format(
+                           "show only if target is (or has):",
+                           "is_dns, is_resolver, version, all.",
+                           "It defaults to 'is_dns'."),
+                       required=False, default='is_dns', type=str)
+    query.add_argument("-v", "--verbose", action="count")
 
     return parser.parse_args()
 
@@ -76,22 +99,24 @@ def test_args(args):
     return result
 
 
-def main():
-    """ the main script.
-
-    It loops over a list of IPs and perform name resolution.
+def run_scan(args, queue, targets):
+    """ Run a scan against targets and return a Pynamo modeled list of objects.
+    :param args: arguments from main
+    :type args: argparse.Namespace
+    :queue: a queue passed here from main
+    :type queue: queue.Queue
+    :param targets: list of ips, divided in chunks if necessary
+    :type targets: list
+    :returns: a list of pynamo objects, if not empty
+    :rtype: list
     """
-    args = get_args()
-
-    targets = test_args(args)
 
     result = {}
-    my_queue = queue.Queue()
 
     for chunk in targets:
         threads = []
         for ip in chunk:
-            obj = ThreadedModel(ip, queue=my_queue)
+            obj = ThreadedModel(ip, queue=queue)
             obj.daemon = True
             threads.append(obj)
         for thread in threads:
@@ -99,8 +124,9 @@ def main():
         for thread in threads:
             thread.join(timeout=2)
 
-        while not my_queue.empty():
-            ip_info = my_queue.get()
+        while not queue.empty():
+            ip_info = queue.get()
+            print(ip_info)
             if args.filter == 'all':
                 result.update({ip_info['ip']: ip_info})
             elif ip_info.get(args.filter):
@@ -113,6 +139,22 @@ def main():
                     output.write(str(result))
             else:
                 print('\nnot overwriting the file; print to stout only\n')
+
+    return result
+
+
+def main():
+    """ the main script.
+
+    It loops over a list of IPs and perform name resolution.
+    """
+    args = get_args()
+
+    if args.subparser == "scan":
+
+        targets = test_args(args)
+        my_queue = queue.Queue()
+        result = run_scan(args, my_queue, targets)
 
     pprint(result)
 
