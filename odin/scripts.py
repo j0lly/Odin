@@ -99,6 +99,11 @@ def test_args(args):
     return result
 
 
+def run_query():
+    """Run a query against the DB"""
+    pass
+
+
 def run_scan(args, queue, targets):
     """ Run a scan against targets and return a Pynamo modeled list of objects.
     :param args: arguments from main
@@ -126,7 +131,6 @@ def run_scan(args, queue, targets):
 
         while not queue.empty():
             ip_info = queue.get()
-            print(ip_info)
             if args.filter == 'all':
                 result.update({ip_info['ip']: ip_info})
             elif ip_info.get(args.filter):
@@ -143,18 +147,33 @@ def run_scan(args, queue, targets):
     return result
 
 
-def main():
-    """ the main script.
-
-    It loops over a list of IPs and perform name resolution.
+def load_data():
+    """ load data into the DB; can get data from file
+    data has to be formatted as json with the following syntax:
+        {'192.168.0.1': { 'ip': '192.168.0.1',
+                          'is_dns': True,
+                          'is_resolver': True,
+                          'netmask': '192.168',
+                          'timestamp': ###,
+                          'version': 'dnsmasq-2.70'
+                        }
+        }
     """
+    pass
+
+
+def main():
+    """ the main script."""
+
     args = get_args()
 
     if args.subparser == "scan":
-
         targets = test_args(args)
         my_queue = queue.Queue()
         result = run_scan(args, my_queue, targets)
+
+    elif args.subparser == "query":
+        pass
 
     pprint(result)
 
