@@ -6,6 +6,7 @@ abstraction layer for storing miner results
 
 import threading
 import queue
+import arrow
 from pynamodb.models import Model
 from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
 from pynamodb.attributes import (UTCDateTimeAttribute, UnicodeAttribute,
@@ -50,6 +51,21 @@ class OpenDnsModel(Worker, Model):
         super(OpenDnsModel, self).__init__(*args, **kwargs)
         self.netmask = '.'.join(self.ip.split('.')[0:2])
 
+    @property
+    def serialize(self):
+        """ take values and prepare them form printing """
+        result = dict(
+                ip=self.ip,
+                netmask=self.netmask,
+                is_dns=self.is_dns,
+                is_resolver=self.is_resolver,
+                version=self.version,
+                timestamp=arrow.get(
+                    self.timestamp).format(
+                        'YYYY-MM-DD HH:mm:ss ZZ')
+                )
+        return result
+
 
 class ThreadedModel(OpenDnsModel, threading.Thread):
     """ Model for dns objects """
@@ -82,7 +98,7 @@ class ThreadedModel(OpenDnsModel, threading.Thread):
         """
         self.dns_scan(version)
         try:
-            self.queue.put(self.attribute_values, block, timeout)
+            self.queue.put(self, block, timeout)
         except queue.Full:
             # TODO: logging here
             pass

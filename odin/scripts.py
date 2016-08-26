@@ -112,8 +112,8 @@ def run_scan(args, queue, targets):
     :type queue: queue.Queue
     :param targets: list of ips, divided in chunks if necessary
     :type targets: list
-    :returns: a list of pynamo objects, if not empty
-    :rtype: list
+    :returns: a dict of pynamo objects, and the ip as the key
+    :rtype: dict
     """
 
     result = {}
@@ -132,9 +132,9 @@ def run_scan(args, queue, targets):
         while not queue.empty():
             ip_info = queue.get()
             if args.filter == 'all':
-                result.update({ip_info['ip']: ip_info})
-            elif ip_info.get(args.filter):
-                result.update({ip_info['ip']: ip_info})
+                result.update({ip_info.ip: ip_info.serialize})
+            elif getattr(ip_info, args.filter):
+                result.update({ip_info.ip: ip_info.serialize})
     if args.output:
         if os.path.exists(args.output):
             answer = input('file {} exist: overwrite? '.format(args.output))

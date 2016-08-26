@@ -3,3 +3,4 @@ Flask==0.10.1
 dnspython3==1.12.0
 pynamodb==1.5.2
 moto==0.4.25
+arrow==0.8.0
