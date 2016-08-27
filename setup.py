@@ -30,6 +30,11 @@ setup(
     entry_points = {
         'console_scripts': ['odin=odin.scripts:main'],
     },
+    install_requires=["Flask == 0.10.1 ;python_version >= '3.4'",
+        "dnspython3 == 1.12.0 ;python_version >= '3.4'",
+        "pynamodb == 1.5.2 ;python_version >= '3.4'",
+        "moto == 0.4.25 ;python_version >= '3.4'",
+        "arrow == 0.8.0 ;python_version >= '3.4'"],
     tests_require=['pytest'],
     cmdclass = {'test': PyTest},
 )
