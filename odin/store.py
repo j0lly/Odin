@@ -8,28 +8,41 @@ import threading
 import queue
 import arrow
 from pynamodb.models import Model
-from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
+from pynamodb.indexes import (GlobalSecondaryIndex, AllProjection)
 from pynamodb.attributes import (UTCDateTimeAttribute, UnicodeAttribute,
                                  BooleanAttribute)
 from .worker import Worker
-from .static import TABLE, G_SEC_INDEX
+from .static import TABLE, RESOLVERS_GLOBAL_INDEX, CLASS_B_GLOBAL_INDEX
 
 
-class NetMasks(GlobalSecondaryIndex):
+class ClassB(GlobalSecondaryIndex):
     """
     This class represents a global secondary index
     """
     class Meta:
-        index_name = G_SEC_INDEX
+        index_name = CLASS_B_GLOBAL_INDEX
         read_capacity_units = 5
         write_capacity_units = 5
         # All attributes are projected
         projection = AllProjection()
 
-    # This attribute is the hash key for the index
-    # Note that this attribute must also exist
-    # in the model
-    netmask = UnicodeAttribute(default=None, hash_key=True)
+    class_b = UnicodeAttribute(hash_key=True)
+    timestamp = UTCDateTimeAttribute(range_key=True)
+
+
+class ResolversIndex(GlobalSecondaryIndex):
+    """
+    This class represents a local secondary index
+    to search history of a single ip
+    """
+    class Meta:
+        index_name = RESOLVERS_GLOBAL_INDEX
+        read_capacity_units = 5
+        write_capacity_units = 5
+        # All attributes are projected
+        projection = AllProjection()
+
+    is_resolver = BooleanAttribute(hash_key=True)
     timestamp = UTCDateTimeAttribute(range_key=True)
 
 
@@ -40,30 +53,30 @@ class OpenDnsModel(Worker, Model):
         host = 'http://127.0.0.1:8000'
 
     ip = UnicodeAttribute(hash_key=True)
-    netmask = UnicodeAttribute(default=None)
-    timestamp = UTCDateTimeAttribute(range_key=True)
+    timestamp = UTCDateTimeAttribute()
+    class_b = UnicodeAttribute()
     is_dns = BooleanAttribute(default=False)
     is_resolver = BooleanAttribute(default=False)
-    version = UnicodeAttribute(default=None)
-    netmasks = NetMasks()
+    version = UnicodeAttribute(null=True, default=None)
+    class_b_index = ClassB()
+    openresolvers_index = ResolversIndex()
 
     def __init__(self, *args, **kwargs):
         super(OpenDnsModel, self).__init__(*args, **kwargs)
-        self.netmask = '.'.join(self.ip.split('.')[0:2])
+        self.class_b = '.'.join(self.ip.split('.')[0:2])
 
     @property
     def serialize(self):
         """ take values and prepare them form printing """
         result = dict(
-                ip=self.ip,
-                netmask=self.netmask,
-                is_dns=self.is_dns,
-                is_resolver=self.is_resolver,
-                version=self.version,
-                timestamp=arrow.get(
-                    self.timestamp).format(
-                        'YYYY-MM-DD HH:mm:ss ZZ')
-                )
+            ip=self.ip,
+            class_b=self.class_b,
+            is_dns=self.is_dns,
+            is_resolver=self.is_resolver,
+            version=self.version,
+            timestamp=arrow.get(
+                self.timestamp).format(
+                    'YYYY-MM-DD HH:mm:ss ZZ'))
         return result
 
 
@@ -72,14 +85,6 @@ class ThreadedModel(OpenDnsModel, threading.Thread):
     class Meta:
         table_name = TABLE
         host = 'http://127.0.0.1:8000'
-
-    ip = UnicodeAttribute(hash_key=True)
-    netmask = UnicodeAttribute(default=None)
-    timestamp = UTCDateTimeAttribute(range_key=True)
-    is_dns = BooleanAttribute(default=False)
-    is_resolver = BooleanAttribute(default=False)
-    version = UnicodeAttribute(default=None)
-    netmasks = NetMasks()
 
     def __init__(self, *args, **kwargs):
         threading.Thread.__init__(self)

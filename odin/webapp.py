@@ -6,15 +6,19 @@ Defines an ap object and serves few API endpoints"""
 
 import queue
 import flask
-from flask import request
+from flask import request, Blueprint
 from .store import OpenDnsModel, ThreadedModel
 from .utils import findip
 
+
+v1 = Blueprint('simple_page', __name__)
+
 app = flask.Flask(__name__)
+app.register_blueprint(v1, url_prefix='/v1')
 
 
-@app.route('/show/<ip>')
-def sync_resolve(ip):
+@v1.route('/scan/<ip>', methods=['GET', 'POST'])
+def scan_endpoint(ip):
     """Perform a single ip lookup
 
     :param ip: the ip passed in url
@@ -23,10 +27,25 @@ def sync_resolve(ip):
     # TODO: sanity checks
     show = OpenDnsModel(ip)
     show.dns_scan()
-    return flask.jsonify(show.attribute_values)
+    if request.method == 'POST':
+        show.save()
+        return flask.jsonify(show.serialize), 201
+    return flask.jsonify(show.serialize)
 
 
-@app.route('/scan/')
+@v1.route('/show/<ip>', methods=['GET'])
+def show_endpoint(ip):
+    """Perform a single get from dynamo
+
+    :param ip: the ip passed in url
+    :type ip: str
+    """
+    # TODO: sanity checks
+    result = OpenDnsModel.get(ip)
+    return flask.jsonify(result.serialize)
+
+
+@v1.route('/batch/')
 def net_scan():
     """Perform a scan of a CIDR range provided as param and return it."""
 
@@ -52,6 +71,6 @@ def net_scan():
 
     while not my_queue.empty():
         ip_info = my_queue.get()
-        result.update({ip_info['ip']: ip_info})
+        result.update({ip_info.ip: ip_info.serialize})
 
     return flask.jsonify(result)
