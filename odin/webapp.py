@@ -6,15 +6,34 @@ Defines an app object and serves few API endpoints"""
 
 import queue
 import flask
-from flask import request, Blueprint
+from flask import request, Response, Blueprint
 from odin.store import OpenDnsModel
-from odin.utils import findip, run_scan, chunker
+from odin.utils import (findip, run_scan,
+                        generate_serialized_results, chunker)
 
 
 v1 = Blueprint('simple_page', __name__)
 
 app = flask.Flask(__name__)
 app.register_blueprint(v1, url_prefix='/v1')
+
+
+@v1.route('/')
+def get_all():
+    """show open resolvers saved in the DB"""
+    # TODO: sanity checks
+    # Arbitrary limit default value of 50 results
+    try:
+        limit = int(request.args.get('limit', '50'))
+        assert limit > 0
+    except:
+        return 'you need to pass a positive integet to limit parameter', 400
+
+    query = OpenDnsModel.openresolvers_index.query(1, limit=limit)
+
+    return Response(generate_serialized_results(
+        query, output='json'),
+                    mimetype='application/json')
 
 
 @v1.route('/scan/<ip>', methods=['GET', 'POST'])
@@ -62,9 +81,21 @@ def net_scan():
     except Exception:
         return 'invalid ip range provided!', 400
 
-    # TODO add throttling, use celery
-    result = {}
-    for obj in run_scan('all', my_queue, ip_list):
-        result.update({obj.ip: obj.serialize})
+    try:
+        # TODO add throttling, use celery
+        result = []
+        for obj in run_scan('all', my_queue, ip_list):
+            result.append(obj)
+    except:
+        return 'failed to scan the ip list provided', 400
+    try:
+        with OpenDnsModel.batch_write() as batch:
+            for ip in result:
+                batch.save(ip)
+    except:
+        return 'batch failed to save to db', 400
 
-    return flask.jsonify(result)
+    retval = {}
+    for obj in result:
+        retval.update({obj.ip: obj.serialize})
+    return flask.jsonify(retval)

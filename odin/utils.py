@@ -3,6 +3,7 @@
 """collection of helpers for Miner module."""
 
 import ipaddress
+import json
 from odin.store import ThreadedModel
 
 
@@ -68,3 +69,22 @@ def run_scan(filter, queue, targets, cls=ThreadedModel):
         while not queue.empty():
             ip_info = queue.get()
             yield ip_info
+
+
+def generate_serialized_results(query, output='json'):
+    """Simple helper to generate usable output from a pynamo query
+    :param query: a pynamo query that returned a generator
+    :type query: generator
+    :param output: format of the utput, for now just json or byte format
+    :type output: str
+    :returns: a dictionary generator of serialized pynamodb objects
+    :rtype: generator
+    """
+    for result in query:
+        obj = result.serialize
+        if output == 'json':
+            yield '{}\n'.format(json.dumps(obj, indent=4))
+        elif output == 'bytes':
+            yield '{}\n'.format(json.dumps(obj, indent=4)).encode('utf-8')
+        elif output is None:
+            yield obj
