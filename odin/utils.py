@@ -3,6 +3,7 @@
 """collection of helpers for Miner module."""
 
 import ipaddress
+from odin.store import ThreadedModel
 
 
 def findip(string):
@@ -37,3 +38,40 @@ def chunker(iterable, chunk_size):
     """
     for x in range(0, len(iterable), chunk_size):
         yield iterable[x:x+chunk_size]
+
+
+def run_scan(filter, queue, targets, cls=ThreadedModel):
+    """ Run a scan against targets and return a Pynamo modeled list of objects.
+    :param filter: chose how any attributes to store in the reply
+    :type args: str
+    :queue: a queue
+    :type queue: queue.Queue
+    :param targets: list of ips, divided in chunks if necessary
+    :type targets: list
+    :param cls: class to be used for resolution and threading
+    :type cls: class object
+    :returns: a dict of pynamo objects, and the ip as the key
+    :rtype: dict
+    """
+
+    result = {}
+
+    for chunk in targets:
+        threads = []
+        for ip in chunk:
+            obj = cls(ip, queue=queue)
+            obj.daemon = True
+            threads.append(obj)
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=2)
+
+        while not queue.empty():
+            ip_info = queue.get()
+            if filter == 'all':
+                result.update({ip_info.ip: ip_info.serialize})
+            elif getattr(ip_info, filter):
+                result.update({ip_info.ip: ip_info.serialize})
+
+    return result

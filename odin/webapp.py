@@ -7,8 +7,8 @@ Defines an ap object and serves few API endpoints"""
 import queue
 import flask
 from flask import request, Blueprint
-from .store import OpenDnsModel, ThreadedModel
-from .utils import findip
+from odin.store import OpenDnsModel
+from odin.utils import findip, run_scan
 
 
 v1 = Blueprint('simple_page', __name__)
@@ -45,12 +45,11 @@ def show_endpoint(ip):
     return flask.jsonify(result.serialize)
 
 
-@v1.route('/batch/')
+@v1.route('/batch/', methods=['POST'])
 def net_scan():
     """Perform a scan of a CIDR range provided as param and return it."""
 
     result = {}
-    threads = []
     my_queue = queue.Queue()
     try:
         ip_range = request.args.get('range')
@@ -60,17 +59,8 @@ def net_scan():
         ip_list = findip(ip_range)
     except Exception:
         return 'invalid ip range provided!'
-    # TODO add throttling
-    for ip in ip_list:
-        obj = ThreadedModel(ip, queue=my_queue)
-        obj.daemon = True
-        threads.append(obj)
-    for thread in threads:
-        thread.start()
-        thread.join(timeout=4)
 
-    while not my_queue.empty():
-        ip_info = my_queue.get()
-        result.update({ip_info.ip: ip_info.serialize})
+    # TODO add throttling
+    result = run_scan('all', my_queue, ip_list)
 
     return flask.jsonify(result)

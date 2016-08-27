@@ -9,8 +9,8 @@ import argparse
 import queue
 import tempfile
 from pprint import pprint
-from odin.store import ThreadedModel
 from odin.static import __version__
+from odin.utils import run_scan
 from odin import utils
 
 
@@ -66,8 +66,8 @@ def get_args():
                        help='{} {} {}'.format(
                            "show only if target is (or has):",
                            "is_dns, is_resolver, version, all.",
-                           "It defaults to 'is_dns'."),
-                       required=False, default='is_dns', type=str)
+                           "It defaults to 'is_resolver'."),
+                       required=False, default='is_resolver', type=str)
     query.add_argument("-v", "--verbose", action="count")
 
     return parser.parse_args()
@@ -104,49 +104,6 @@ def run_query():
     pass
 
 
-def run_scan(args, queue, targets):
-    """ Run a scan against targets and return a Pynamo modeled list of objects.
-    :param args: arguments from main
-    :type args: argparse.Namespace
-    :queue: a queue passed here from main
-    :type queue: queue.Queue
-    :param targets: list of ips, divided in chunks if necessary
-    :type targets: list
-    :returns: a dict of pynamo objects, and the ip as the key
-    :rtype: dict
-    """
-
-    result = {}
-
-    for chunk in targets:
-        threads = []
-        for ip in chunk:
-            obj = ThreadedModel(ip, queue=queue)
-            obj.daemon = True
-            threads.append(obj)
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join(timeout=2)
-
-        while not queue.empty():
-            ip_info = queue.get()
-            if args.filter == 'all':
-                result.update({ip_info.ip: ip_info.serialize})
-            elif getattr(ip_info, args.filter):
-                result.update({ip_info.ip: ip_info.serialize})
-    if args.output:
-        if os.path.exists(args.output):
-            answer = input('file {} exist: overwrite? '.format(args.output))
-            if answer in ['yes', 'y']:
-                with open(args.output, 'w') as output:
-                    output.write(str(result))
-            else:
-                print('\nnot overwriting the file; print to stout only\n')
-
-    return result
-
-
 def load_data():
     """ load data into the DB; can get data from file
     data has to be formatted as json with the following syntax:
@@ -170,12 +127,24 @@ def main():
     if args.subparser == "scan":
         targets = test_args(args)
         my_queue = queue.Queue()
-        result = run_scan(args, my_queue, targets)
+        result = run_scan(args.filter, my_queue, targets)
+        if args.output:
+            if os.path.exists(args.output):
+                answer = input(
+                    'file {} exist: overwrite? '.format(args.output))
+                if answer in ['yes', 'y']:
+                    with open(args.output, 'w') as output:
+                        output.write(str(result))
+                else:
+                    print('\nnot overwriting the file; print to stout only\n')
+
+        pprint(result)
 
     elif args.subparser == "query":
         pass
-
-    pprint(result)
+    else:
+        # FIXME print help
+        pass
 
 
 if __name__ == "__main__":

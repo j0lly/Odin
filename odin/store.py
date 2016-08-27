@@ -11,8 +11,8 @@ from pynamodb.models import Model
 from pynamodb.indexes import (GlobalSecondaryIndex, AllProjection)
 from pynamodb.attributes import (UTCDateTimeAttribute, UnicodeAttribute,
                                  BooleanAttribute)
-from .worker import Worker
-from .static import TABLE, RESOLVERS_GLOBAL_INDEX, CLASS_B_GLOBAL_INDEX
+from odin.worker import Worker
+from odin.static import TABLE, RESOLVERS_GLOBAL_INDEX, CLASS_B_GLOBAL_INDEX
 
 
 class ClassB(GlobalSecondaryIndex):

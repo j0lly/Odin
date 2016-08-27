@@ -1,6 +1,7 @@
 import sys
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
+from odin.static import __version__
 
 
 
@@ -20,7 +21,7 @@ class PyTest(TestCommand):
 
 setup(
 	name='odin',
-    version='0.3',
+    version=__version__,
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     entry_points = {
         'console_scripts': ['odin=odin.scripts:main'],
