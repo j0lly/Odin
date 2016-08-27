@@ -11,6 +11,7 @@ import tempfile
 from pprint import pprint
 from odin.static import __version__
 from odin.utils import run_scan
+from odin.store import OpenDnsModel
 from odin import utils
 
 
@@ -128,8 +129,9 @@ def main():
         targets = test_args(args)
         my_queue = queue.Queue()
         result = []
+        printing = {}
         for obj in run_scan(args.filter, my_queue, targets):
-            pprint({obj.ip: obj.serialize})
+            printing[obj.ip] = obj.serialize
             result.append(obj)
         if args.output:
             if os.path.exists(args.output):
@@ -141,6 +143,14 @@ def main():
                         output.write(str(result))
                 else:
                     print('\nnot overwriting the file; print to stout only\n')
+        try:
+            with OpenDnsModel.batch_write() as batch:
+                for ip in result:
+                    batch.save(ip)
+        except:
+            print('batch failed to save to db')
+
+        pprint(printing)
 
     elif args.subparser == "query":
         pass

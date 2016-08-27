@@ -21,7 +21,6 @@ app.register_blueprint(v1, url_prefix='/v1')
 @v1.route('/')
 def get_all():
     """show open resolvers saved in the DB"""
-    # TODO: sanity checks
     # Arbitrary limit default value of 50 results
     try:
         limit = int(request.args.get('limit', '50'))
@@ -29,7 +28,9 @@ def get_all():
     except:
         return 'you need to pass a positive integet to limit parameter', 400
 
-    query = OpenDnsModel.openresolvers_index.query(1, limit=limit)
+    query = OpenDnsModel.openresolvers_index.query(1,
+                                                   limit=limit,
+                                                   scan_index_forward=False)
 
     return Response(generate_serialized_results(
         query, output='json'),
