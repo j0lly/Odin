@@ -71,9 +71,9 @@ class TestRunScan:
         queue = Mock()
         queue.empty.side_effect = [False, True]
         queue.get.return_value = m_cls
-        assert run_scan('all', queue,
-                        [['192.168.0.1']],
-                        cls=m_cls) == {scanned_ip['ip']: scanned_ip}
+        assert list(run_scan('all', queue,
+                             [["82.81.118.81"]],
+                             cls=m_cls)) == [m_cls]
 
     def test_run_scan_filter_is_dns_not(self):
         scanned_ip = {
@@ -93,8 +93,8 @@ class TestRunScan:
         m_cls.ip = scanned_ip['ip']
         m_cls.is_dns = scanned_ip['is_dns']
         queue = Mock()
-        queue.empty.side_effect = [False, True]
+        queue.empty.side_effect = [True]
         queue.get.return_value = m_cls
-        assert run_scan('is_dns', queue,
-                        [['192.168.0.1']],
-                        cls=m_cls) == {}
+        assert list(run_scan('is_dns', queue,
+                             [['192.168.0.1']],
+                             cls=m_cls)) == []

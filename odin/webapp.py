@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-"""Webapp part of Odin.
+"""api for Odin.
 
-Defines an ap object and serves few API endpoints"""
+Defines an app object and serves few API endpoints"""
 
 import queue
 import flask
 from flask import request, Blueprint
 from odin.store import OpenDnsModel
-from odin.utils import findip, run_scan
+from odin.utils import findip, run_scan, chunker
 
 
 v1 = Blueprint('simple_page', __name__)
@@ -45,22 +45,26 @@ def show_endpoint(ip):
     return flask.jsonify(result.serialize)
 
 
-@v1.route('/batch/', methods=['POST'])
+@v1.route('/batch', methods=['POST'])
 def net_scan():
     """Perform a scan of a CIDR range provided as param and return it."""
 
-    result = {}
+    # FIXME moving to celery or similar
     my_queue = queue.Queue()
+    ip_range = request.json
     try:
-        ip_range = request.args.get('range')
+        network = ip_range['network']
     except Exception:
-        return 'no range parameter specified!'
+        return 'no range parameter specified!', 400
     try:
-        ip_list = findip(ip_range)
+        ip_list = findip(network)
+        ip_list = chunker(ip_list)
     except Exception:
-        return 'invalid ip range provided!'
+        return 'invalid ip range provided!', 400
 
-    # TODO add throttling
-    result = run_scan('all', my_queue, ip_list)
+    # TODO add throttling, use celery
+    result = {}
+    for obj in run_scan('all', my_queue, ip_list):
+        result.update({obj.ip: obj.serialize})
 
     return flask.jsonify(result)

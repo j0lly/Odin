@@ -26,7 +26,7 @@ def findip(string):
         return [k.compressed for k in ip_range.hosts()]
 
 
-def chunker(iterable, chunk_size):
+def chunker(iterable, chunk_size=16):
     """return a list of iterables chunking the initial iterable.
 
     :param iterable: an iterable to cut in chunks
@@ -50,11 +50,9 @@ def run_scan(filter, queue, targets, cls=ThreadedModel):
     :type targets: list
     :param cls: class to be used for resolution and threading
     :type cls: class object
-    :returns: a dict of pynamo objects, and the ip as the key
-    :rtype: dict
+    :returns: yield a list of pynamo objects
+    :rtype: generator
     """
-
-    result = {}
 
     for chunk in targets:
         threads = []
@@ -69,9 +67,4 @@ def run_scan(filter, queue, targets, cls=ThreadedModel):
 
         while not queue.empty():
             ip_info = queue.get()
-            if filter == 'all':
-                result.update({ip_info.ip: ip_info.serialize})
-            elif getattr(ip_info, filter):
-                result.update({ip_info.ip: ip_info.serialize})
-
-    return result
+            yield ip_info

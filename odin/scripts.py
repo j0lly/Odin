@@ -127,18 +127,20 @@ def main():
     if args.subparser == "scan":
         targets = test_args(args)
         my_queue = queue.Queue()
-        result = run_scan(args.filter, my_queue, targets)
+        result = []
+        for obj in run_scan(args.filter, my_queue, targets):
+            pprint({obj.ip: obj.serialize})
+            result.append(obj)
         if args.output:
             if os.path.exists(args.output):
                 answer = input(
                     'file {} exist: overwrite? '.format(args.output))
                 if answer in ['yes', 'y']:
                     with open(args.output, 'w') as output:
+                        # FIXME need to deserialize
                         output.write(str(result))
                 else:
                     print('\nnot overwriting the file; print to stout only\n')
-
-        pprint(result)
 
     elif args.subparser == "query":
         pass
