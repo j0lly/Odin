@@ -7,10 +7,14 @@ Defines an app object and serves few API endpoints"""
 import queue
 import flask
 from flask import request, Response, Blueprint
+import odin
 from odin.store import OpenDnsModel
 from odin.utils import (findip, run_scan,
                         generate_serialized_results, chunker)
 
+
+# Default logging capabilities (logging nowhere)
+log = odin.get_logger()
 
 v1 = Blueprint('simple_page', __name__)
 

@@ -11,11 +11,15 @@ from pynamodb.models import Model
 from pynamodb.indexes import (GlobalSecondaryIndex, AllProjection)
 from pynamodb.attributes import (UTCDateTimeAttribute, UnicodeAttribute,
                                  BooleanAttribute)
+import odin
 from odin.worker import Worker
 from odin.static import (TABLE, RESOLVERS_GLOBAL_INDEX, CLASS_B_GLOBAL_INDEX,
                          CLASSB_RC, CLASSB_WC, RESOLVERS_RC, RESOLVERS_WC,
                          CLASS_A_GLOBAL_INDEX, CLASSA_RC, CLASSA_WC,
                          CLASS_C_GLOBAL_INDEX, CLASSC_RC, CLASSC_WC)
+
+# Default logging capabilities (logging nowhere)
+log = odin.get_logger()
 
 
 class ClassA(GlobalSecondaryIndex):

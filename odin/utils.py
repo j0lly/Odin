@@ -4,8 +4,11 @@
 
 import ipaddress
 import json
-import logging
+import odin
 from odin.store import ThreadedModel
+
+# Default logging capabilities (logging nowhere)
+log = odin.get_logger()
 
 
 def findip(string):
@@ -89,15 +92,3 @@ def generate_serialized_results(query, output='json'):
             yield '{}\n'.format(json.dumps(obj, indent=4)).encode('utf-8')
         elif output is None:
             yield obj
-
-
-def get_logger(log_value=logging.WARN):
-    """ prepare the logger and return one configured """
-    logger = logging.getLogger(__name__)
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter(
-        '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(log_value)
-    return logger

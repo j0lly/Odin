@@ -6,6 +6,10 @@ this module provide the worker object; an asyncronous dns data miner
 
 import datetime
 import dns.resolver
+import odin
+
+# Default logging capabilities (logging nowhere)
+log = odin.get_logger()
 
 
 class Worker(object):

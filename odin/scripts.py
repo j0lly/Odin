@@ -9,10 +9,14 @@ import argparse
 import queue
 import logging
 from pprint import pprint
+import odin
 from odin.static import __version__
-from odin.utils import run_scan, get_logger
+from odin.utils import run_scan
 from odin.store import OpenDnsModel
 from odin import utils
+
+# Default logging capabilities (logging nowhere)
+log = odin.get_logger()
 
 
 def get_args():
@@ -147,7 +151,7 @@ def main():
     else:
         arg = 1
     level = levels[min(len(levels)-1, arg)]
-    log = get_logger(level)
+    log = odin.get_logger(level)
 
     # SCAN case
     if args.subparser == "scan":
