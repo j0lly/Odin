@@ -78,10 +78,10 @@ def get_args():
                            "Specify the type of record to query for: ",
                            "is_dns | is_resolver"))
     query.add_argument("-r", "--range", dest="range",
-                       action="store", type=str,
+                       action="store", type=str, default=None,
                        help="{}{}".format(
                            "Set target range in the form like: ",
-                           "192 | 192.168 | 192.168.0"), required=True)
+                           "192 | 192.168 | 192.168.0"))
     query.add_argument("-V", "--version", dest="version", nargs='?',
                        const=None, type=str,
                        help='{} {} {}'.format(
@@ -133,8 +133,6 @@ def do_query(subject, index=None,
              version_string=None, negate_version=None):
     """Run a query against the DB"""
 
-    # assert match_index_range(index, where)
-    query_over = getattr(OpenDnsModel, index)
     if negate_version:
         version_name = 'version__not_contains'
     elif version_string is True:
@@ -142,34 +140,30 @@ def do_query(subject, index=None,
     else:
         version_name = 'version__contains'
 
-    if subject == 'is_resolver':
-        log.info('performing a query for open resolver type')
-        # Use ad-hoc secondary index
-        query_over = getattr(OpenDnsModel, 'openresolvers_index')
-        for net in nets:
-            log.debug('query for net: %s', net)
-            query = {index + '__eq': str(net),
-                     'scan_index_forward': scan_index_forward}
-            if limit is not None:
-                query.update({'limit': limit})
-            if version_string:
-                query.update({version_name: version_string})
-            for ip in query_over.query(1, **query,):
-                log.debug('returned ip: %s', ip.ip)
-                yield ip
+    query = {'scan_index_forward': scan_index_forward}
+    if limit is not None:
+        query.update({'limit': limit})
+    if version_string:
+        query.update({version_name: version_string})
 
+    if subject == 'is_resolver':
+        query_over = getattr(OpenDnsModel, 'openresolvers_index')
     elif subject == 'is_dns':
-        log.info('performing a query for dns type')
-        query_over = getattr(OpenDnsModel, index + '_index')
+        query_over = getattr(OpenDnsModel, 'dns_index')
+        query.update({'is_resolver__eq': False,
+                      'is_dns__eq': True})  # FIXME
+
+    if len(nets) is 0:
+        log.info('performing a single query for %s type', subject)
+        for ip in query_over.query(1, **query,):
+            log.debug('returned ip: %s', ip.ip)
+            yield ip
+    else:
+        log.info('performing a batch of queries for %s type', subject)
         for net in nets:
             log.debug('query for net: %s', net)
-            query = {'is_dns__eq': True,
-                     'scan_index_forward': scan_index_forward}
-            if limit is not None:
-                query.update({'limit': limit})
-            if version_string:
-                query.update({version_name: version_string})
-            for ip in query_over.query(str(net), **query,):
+            query.update({index + '__eq': str(net)})
+            for ip in query_over.query(1, **query,):
                 log.debug('returned ip: %s', ip.ip)
                 yield ip
 
@@ -263,8 +257,12 @@ def main():
         # - all above with filter option to show only certain info
         # * show last X [anythig, dns, resolver], with possible cass filter
         # * count number per: all, dns, resolver, with  possible class fliter
-        cidr, class_range = assembler(args.range)
-        nets = [args.range]
+        if args.range:
+            cidr, class_range = assembler(args.range)
+            nets = [args.range]
+        else:
+            class_range = None
+            nets = []
 
         if args.version == 1:
             version_string, negate_version = True, None

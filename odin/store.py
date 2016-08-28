@@ -14,6 +14,7 @@ from pynamodb.attributes import (UTCDateTimeAttribute, UnicodeAttribute,
 import odin
 from odin.worker import Worker
 from odin.static import (TABLE, RESOLVERS_GLOBAL_INDEX, CLASS_B_GLOBAL_INDEX,
+                         DNS_GLOBAL_INDEX, DNS_RC, DNS_WC,
                          CLASSB_RC, CLASSB_WC, RESOLVERS_RC, RESOLVERS_WC,
                          CLASS_A_GLOBAL_INDEX, CLASSA_RC, CLASSA_WC,
                          CLASS_C_GLOBAL_INDEX, CLASSC_RC, CLASSC_WC)
@@ -83,6 +84,22 @@ class ResolversIndex(GlobalSecondaryIndex):
     timestamp = UTCDateTimeAttribute(range_key=True)
 
 
+class DnsIndex(GlobalSecondaryIndex):
+    """
+    This class represents a local secondary index
+    to search history of a single ip
+    """
+    class Meta:
+        index_name = DNS_GLOBAL_INDEX
+        read_capacity_units = DNS_RC
+        write_capacity_units = DNS_WC
+        # All attributes are projected
+        projection = AllProjection()
+
+    is_dns = BooleanAttribute(hash_key=True)
+    timestamp = UTCDateTimeAttribute(range_key=True)
+
+
 class OpenDnsModel(Worker, Model):
     """ Model for dns objects """
     class Meta:
@@ -101,6 +118,7 @@ class OpenDnsModel(Worker, Model):
     class_b_index = ClassB()
     class_c_index = ClassC()
     openresolvers_index = ResolversIndex()
+    dns_index = DnsIndex()
 
     def __init__(self, *args, **kwargs):
         super(OpenDnsModel, self).__init__(*args, **kwargs)
@@ -110,14 +128,9 @@ class OpenDnsModel(Worker, Model):
 
     @property
     def serialize(self):
-        """ take values and prepare them form printing """
+        """ take important values and prepare them form printing """
         result = dict(
             ip=self.ip,
-            class_a=self.class_a,
-            class_b=self.class_b,
-            class_c=self.class_c,
-            is_dns=self.is_dns,
-            is_resolver=self.is_resolver,
             version=self.version,
             timestamp=arrow.get(
                 self.timestamp).format(
