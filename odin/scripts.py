@@ -11,7 +11,7 @@ import logging
 from pprint import pprint
 import odin
 from odin.static import __version__
-from odin.utils import run_scan
+from odin.utils import (run_scan, assembler, get_filter)
 from odin.store import OpenDnsModel
 from odin import utils
 
@@ -26,7 +26,14 @@ def get_args():
     :rtype: argparse.Namespace
     """
 
-    parser = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser()
+    parser_exclusive = parser.add_mutually_exclusive_group(required=False)
+    parser_exclusive.add_argument('-v', '--verbose',
+                                  action='count', default=None)
+    parser_exclusive.add_argument('-q', '--quiet',
+                                  action='store_const', const=0, default=None)
+
+    hold_parser = argparse.ArgumentParser(
         description='{0}{1}{2}{3}{4}{5}{6}'.format(
             'Odin is a command line tool to scan an host or a ',
             'CIDR formatted network and find Open Resolvers. ',
@@ -35,15 +42,8 @@ def get_args():
             'thread pool number to spawn to process the requests. (bare in ',
             'mind your ISP could easely throttle you out if you burst to much',
             'traffic in a single run!)'))
-    parser_exclusive = parser.add_mutually_exclusive_group(required=False)
-    parser_exclusive.add_argument('-v', '--verbose',
-                                  action='count', default=None)
-    parser_exclusive.add_argument('-q', '--quiet',
-                                  action='store_const', const=0, default=None)
-    parser.add_argument("-V", "--version", action="version",
-                        version="%(prog)s " + __version__)
-
-    hold_parser = argparse.ArgumentParser(add_help=False)
+    hold_parser.add_argument("--version", action="version",
+                             version="%(prog)s " + __version__)
     subparsers = hold_parser.add_subparsers(dest="subparser")
 
     # Scan sub parser
@@ -72,18 +72,30 @@ def get_args():
     query = subparsers.add_parser('query', parents=[parser],
                                   conflict_handler='resolve',
                                   )
-    query.add_argument("-t", "--target", dest="target",
-                       action="store", type=str, default=None,
-                       help="Set target: IP or CIDR range.", required=True)
-    query.add_argument("-c", "--chunk", dest="chunk", action="store",
-                       default=50, type=int,
-                       help="Set Ip Range chunk size; 1024 max.")
-    query.add_argument("-f", "--filter", dest="filter", action="store",
+    query.add_argument("-t", "--type", dest="type",
+                       action="store", type=str,
+                       required=True, help="{}{}".format(
+                           "Specify the type of record to query for: ",
+                           "is_dns | is_resolver"))
+    query.add_argument("-r", "--range", dest="range",
+                       action="store", type=str,
+                       help="{}{}".format(
+                           "Set target range in the form like: ",
+                           "192 | 192.168 | 192.168.0"), required=True)
+    query.add_argument("-V", "--version", dest="version", nargs='?',
+                       const=None, type=str,
                        help='{} {} {}'.format(
-                           "show only if target is (or has):",
-                           "is_dns, is_resolver, version, all.",
-                           "It defaults to 'is_resolver'."),
-                       required=False, default='is_resolver', type=str)
+                           "query only for target with ",
+                           "or without a particular dns version in the form:",
+                           "'dnsmasq' or '!dnsmasq'"))
+    query.add_argument("--reversed", action="store_false",
+                       help="{}{}".format(
+                           "if specified, the resultset ",
+                           "is sorted from older to newer"),
+                       default=True)
+    query.add_argument("-l", "--limit", dest="limit", action="store",
+                       default=None, type=int,
+                       help="Set a limit for results")
 
     # Db sun parser
     db = subparsers.add_parser('db', parents=[parser],
@@ -116,9 +128,50 @@ def get_args():
     return (hold_parser.parse_args(), hold_parser)
 
 
-def run_query():
+def do_query(subject, index=None,
+             nets=[], scan_index_forward=None, limit=None,
+             version_string=None, negate_version=None):
     """Run a query against the DB"""
-    pass
+
+    # assert match_index_range(index, where)
+    query_over = getattr(OpenDnsModel, index)
+    if negate_version:
+        version_name = 'version__not_contains'
+    elif version_string is True:
+        version_name = 'version__not_null'
+    else:
+        version_name = 'version__contains'
+
+    if subject == 'is_resolver':
+        log.info('performing a query for open resolver type')
+        # Use ad-hoc secondary index
+        query_over = getattr(OpenDnsModel, 'openresolvers_index')
+        for net in nets:
+            log.debug('query for net: %s', net)
+            query = {index + '__eq': str(net),
+                     'scan_index_forward': scan_index_forward}
+            if limit is not None:
+                query.update({'limit': limit})
+            if version_string:
+                query.update({version_name: version_string})
+            for ip in query_over.query(1, **query,):
+                log.debug('returned ip: %s', ip.ip)
+                yield ip
+
+    elif subject == 'is_dns':
+        log.info('performing a query for dns type')
+        query_over = getattr(OpenDnsModel, index + '_index')
+        for net in nets:
+            log.debug('query for net: %s', net)
+            query = {'is_dns__eq': True,
+                     'scan_index_forward': scan_index_forward}
+            if limit is not None:
+                query.update({'limit': limit})
+            if version_string:
+                query.update({version_name: version_string})
+            for ip in query_over.query(str(net), **query,):
+                log.debug('returned ip: %s', ip.ip)
+                yield ip
 
 
 def load_data():
@@ -140,6 +193,9 @@ def main():
     """ the main script."""
 
     args, parser = get_args()
+    if args.subparser is None:
+        parser.print_help()
+        return
 
     # setup logging
     levels = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
@@ -207,7 +263,25 @@ def main():
         # - all above with filter option to show only certain info
         # * show last X [anythig, dns, resolver], with possible cass filter
         # * count number per: all, dns, resolver, with  possible class fliter
-        pass
+        cidr, class_range = assembler(args.range)
+        nets = [args.range]
+
+        if args.version == 1:
+            version_string, negate_version = True, None
+        elif args.version:
+            version_string, negate_version = get_filter(args.version)
+        else:
+            version_string, negate_version = None, None
+        log.debug(
+            'cheking version params: version_string %s, negate_version %s',
+            version_string, negate_version)
+
+        for i in do_query(args.type, index=class_range,
+                          nets=nets, scan_index_forward=args.reversed,
+                          version_string=version_string, limit=args.limit,
+                          negate_version=negate_version):
+            log.debug('perform serialization of obj: %s', i.ip)
+            pprint(i.serialize)
 
     # DELETE CASE
     elif args.subparser == "delete":
@@ -288,6 +362,20 @@ def main():
             result = OpenDnsModel.delete_table()
             log.info("delete successful")
             return pprint(result)
+
+        elif args.modify:
+            # TODO mafe a function I saved output because no documentation is
+            # there
+            # q=TableConnection(table_name='OpenDns',
+            #         host='http://127.0.0.1:8000')
+            # q.update_table(
+            #         read_capacity_units=50,
+            #         write_capacity_units=50,
+            #         global_secondary_index_updates=[
+            #             {'read_capacity_units': 50,
+            #              'write_capacity_units': 50,
+            #              'index_name': 'ClassA'}])
+            pass
 
     else:
         parser.print_help()

@@ -92,3 +92,23 @@ def generate_serialized_results(query, output='json'):
             yield '{}\n'.format(json.dumps(obj, indent=4)).encode('utf-8')
         elif output is None:
             yield obj
+
+
+def assembler(string):
+    """get a str with class a, b or c range in the form:
+       192, 192.168, 192.168.0 and return proper CIDR address like 192.0.0.0/8
+    """
+    class_range = ['class_c', 'class_b', 'class_a']
+    missing = 4 - len(string.split('.'))
+    log.debug('building cidr with %s missing dots', missing)
+    for dots in range(0, missing):
+        string += '.0'
+    return (string+'/'+str(int(24/missing)), class_range[missing-1])
+
+
+def get_filter(string):
+    """build filter string and assert if negation is in place"""
+    if string[0] is '!':
+        return(string[1:], True)
+    else:
+        return(string, False)
