@@ -7,9 +7,10 @@ Cli tool for odin
 import os
 import argparse
 import queue
+import logging
 from pprint import pprint
 from odin.static import __version__
-from odin.utils import run_scan
+from odin.utils import run_scan, get_logger
 from odin.store import OpenDnsModel
 from odin import utils
 
@@ -30,12 +31,20 @@ def get_args():
             'thread pool number to spawn to process the requests. (bare in ',
             'mind your ISP could easely throttle you out if you burst to much',
             'traffic in a single run!)'))
+    parser_exclusive = parser.add_mutually_exclusive_group(required=False)
+    parser_exclusive.add_argument('-v', '--verbose',
+                                  action='count', default=None)
+    parser_exclusive.add_argument('-q', '--quiet',
+                                  action='store_const', const=0, default=None)
     parser.add_argument("-V", "--version", action="version",
                         version="%(prog)s " + __version__)
-    subparsers = parser.add_subparsers(dest='subparser')
+
+    hold_parser = argparse.ArgumentParser(add_help=False)
+    subparsers = hold_parser.add_subparsers(dest="subparser")
 
     # Scan sub parser
-    scan = subparsers.add_parser('scan',
+    scan = subparsers.add_parser('scan', parents=[parser],
+                                 conflict_handler='resolve',
                                  description="{}{}{}".format(
                                      "Perform a scan and return the ",
                                      "result, optionally save the ",
@@ -54,10 +63,11 @@ def get_args():
                       required=False, default='is_resolver', type=str)
     scan.add_argument("--store", action="store_true",
                       help="if specified store the result in Dynamo")
-    scan.add_argument("-v", "--verbose", action="count")
 
     # Query sub parser
-    query = subparsers.add_parser('query',)
+    query = subparsers.add_parser('query', parents=[parser],
+                                  conflict_handler='resolve',
+                                  )
     query.add_argument("-t", "--target", dest="target",
                        action="store", type=str, default=None,
                        help="Set target: IP or CIDR range.", required=True)
@@ -72,7 +82,9 @@ def get_args():
                        required=False, default='is_resolver', type=str)
 
     # Db sun parser
-    db = subparsers.add_parser('db',)
+    db = subparsers.add_parser('db', parents=[parser],
+                               conflict_handler='resolve',
+                               )
     exclusive = db.add_mutually_exclusive_group(required=True)
     exclusive.add_argument("--dump", dest="dump", action="store",
                            help="Output file")
@@ -89,31 +101,15 @@ def get_args():
                            help="describe the DB tables")
 
     # Delete sub parser
-    delete = subparsers.add_parser('delete',)
+    delete = subparsers.add_parser('delete', parents=[parser],
+                                   conflict_handler='resolve'
+                                   )
     delete.add_argument("-t", "--target", dest="target",
                         action="store", type=str, default=None,
                         help="Set target for deletion: IP or CIDR range.",
                         required=True)
 
-    return (parser.parse_args(), parser)
-
-
-def test_args(args):
-    """ test the passed arguments against sane values.
-
-    :param args: argument passed to script
-    :type args: argparse.Namespace
-    :returns: list of ips, divided in chunks if necessary
-    :rtype: list
-    """
-
-    targets = utils.findip(args.target)
-    # assert len(targets) <= 256 or args.output
-    # TODO tests on output file
-    assert args.chunk > 1 and args.chunk <= 1024, (
-        'You have to specify a chunk between 1 and 1024.')
-    result = utils.chunker(targets, args.chunk)
-    return result
+    return (hold_parser.parse_args(), hold_parser)
 
 
 def run_query():
@@ -141,9 +137,29 @@ def main():
 
     args, parser = get_args()
 
+    # setup logging
+    levels = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
+    # taking care to check either verbosity or quiet flag
+    if args.verbose is not None:
+        arg = args.verbose + 1
+    elif args.quiet is not None:
+        arg = args.quiet
+    else:
+        arg = 1
+    level = levels[min(len(levels)-1, arg)]
+    log = get_logger(level)
+
     # SCAN case
     if args.subparser == "scan":
-        targets = test_args(args)
+        log.info('Preparing for scanning..')
+
+        targets = utils.findip(args.target)
+        log.debug('list of ip to be scanned: %s', targets)
+
+        assert args.chunk > 1 and args.chunk <= 1024, (
+            'You have to specify a chunk between 1 and 1024.')
+        targets = utils.chunker(targets, args.chunk)
+
         assert args.filter in ['is_dns',
                                'is_resolver',
                                'version',
@@ -156,21 +172,26 @@ def main():
         printing = {}
 
         for obj in run_scan(args.filter, my_queue, targets):
+            log.debug('adding %s to the resultset', obj.ip)
             printing[obj.ip] = obj.serialize
             result.append(obj)
 
         if args.store:
+            log.info('store flag passed: saving results into the DB..')
             try:
                 with OpenDnsModel.batch_write() as batch:
                     for ip in result:
+                        log.debug('storing ip: %s', ip)
                         batch.save(ip)
-            except:
-                print('batch failed to save to db')
+            except Exception as err:
+                log.error('batch failed to save to db:', exc_info=True)
+                pass
 
         pprint(printing)
 
     # QUERY case
     elif args.subparser == "query":
+        log.info('Preparing for querying..')
         # query needs:
         # * show all openresolvers
         # * show all openresolvers with version X
@@ -186,72 +207,83 @@ def main():
 
     # DELETE CASE
     elif args.subparser == "delete":
+        log.info('starting deletion of IP addresses')
         targets = utils.findip(args.target)
         # FIXME BUG in pynamo: single delete is ok, but batching complain about
         # key that cannnot be null
         objects = []
         for target in targets:
+            log.debug('preparing to delete item: %s', target)
             try:
                 objects.append(OpenDnsModel.get(target))
             # obj does not exist
-            except:
-                pass
+            except Exception as err:
+                log.info('ip: %s does not exist in DB', target)
         try:
             with OpenDnsModel.batch_write() as batch:
                 for ip in objects:
                     batch.delete(ip)
         except Exception as err:
-            print("unable to delete the specified ips: {}".format(err))
+            log.error("unable to delete the specified ips: %s",
+                      err, exc_info=True)
+            return
+        log.info('delete operation finished successfully')
 
     # DB manipulation case
     elif args.subparser == "db":
         if args.describe:
+            log.info('describe table %s', OpenDnsModel.Meta.table_name)
             return pprint(OpenDnsModel.describe_table())
 
         if args.load:
+            log.info('preparing to load dataset from file..')
             try:
                 OpenDnsModel.load(args.load)
-            except FileNotFoundError:
-                print('{}{}{}'.format(
-                    '\nUnable to load data from',
-                    args.load,
-                    '. are you sure the file exisits?\n')
-                     )
+            except FileNotFoundError as err:
+                log.fatal('%s%s%s',
+                          '\nUnable to load data from',
+                          args.load,
+                          '. are you sure the file exisits?\n')
                 return
-            return "data from '{}' succesfully loaded in DB".format(args.load)
+            log.info('data succefully loaded from %s', args.load)
 
         elif args.dump:
+            log.info('dumping the DB in %s', args.dump)
             if os.path.exists(args.dump):
                 answer = input(
                     'file {} exist: overwrite? '.format(args.dump))
                 if answer in ['yes', 'y']:
                     OpenDnsModel.dump(args.dump)
                 else:
-                    print('\nnot overwriting the file; print to stout only\n')
-                    return
+                    log.warn('user choice exception, exiting..')
             else:
                 OpenDnsModel.dump(args.dump)
-            return "DB dumped correctly to {} file".format(args.dump)
+            log.info('DB dumped correctly')
 
         elif args.create:
-            print("creating database... \n")
+            log.info("creating database... ")
             try:
                 read, write = (int(param) for param in args.create)
             except Exception as err:
-                return "wrong read or write parameter specified: {}".format(
-                        args.create)
+                log.fatal(
+                    'wrong read or write parameter specified: %s',
+                    args.create)
+                return
+
             result = OpenDnsModel.create_table(wait=True,
                                                read_capacity_units=read,
                                                write_capacity_units=write)
             if result is None:
-                print("DB already exist:\n")
+                log.debug('DB already exist')
                 return pprint(OpenDnsModel.describe_table())
             else:
                 return pprint(result)
 
         elif args.delete:
-            print("deleting database.. \n")
-            return OpenDnsModel.delete_table()
+            log.info("deleting database.. ")
+            result = OpenDnsModel.delete_table()
+            log.info("delete successful")
+            return pprint(result)
 
     else:
         parser.print_help()
