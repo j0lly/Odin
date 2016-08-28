@@ -85,6 +85,8 @@ def get_args():
                                " giving read and write capacity"))
     exclusive.add_argument("--delete", action="store_true",
                            help="delete the DB table")
+    exclusive.add_argument("--describe", action="store_true",
+                           help="describe the DB tables")
 
     # Delete sub parser
     delete = subparsers.add_parser('delete',)
@@ -169,6 +171,17 @@ def main():
 
     # QUERY case
     elif args.subparser == "query":
+        # query needs:
+        # * show all openresolvers
+        # * show all openresolvers with version X
+        # * show all dns
+        # * show all dns with version X
+        # * show all
+        # - all above with given range 192, 192.168, 192.168.55
+        # - all above with timerange first to last or viceversa
+        # - all above with filter option to show only certain info
+        # * show last X [anythig, dns, resolver], with possible cass filter
+        # * count number per: all, dns, resolver, with  possible class fliter
         pass
 
     # DELETE CASE
@@ -192,6 +205,8 @@ def main():
 
     # DB manipulation case
     elif args.subparser == "db":
+        if args.describe:
+            return pprint(OpenDnsModel.describe_table())
 
         if args.load:
             try:
@@ -201,9 +216,9 @@ def main():
                     '\nUnable to load data from',
                     args.load,
                     '. are you sure the file exisits?\n')
-                    )
+                     )
                 return
-            return "data from '{}' succesfully loaded in DB".format(args._load)
+            return "data from '{}' succesfully loaded in DB".format(args.load)
 
         elif args.dump:
             if os.path.exists(args.dump):
@@ -216,16 +231,26 @@ def main():
                     return
             else:
                 OpenDnsModel.dump(args.dump)
-            return "DB dumped correctly to {} file".format(args._dump)
+            return "DB dumped correctly to {} file".format(args.dump)
 
         elif args.create:
-            print("creating database")
-            read, write = args.create
-            return OpenDnsModel.create_table(wait=True,
-                                             read_capacity_units=read,
-                                             write_capacity_units=write)
+            print("creating database... \n")
+            try:
+                read, write = (int(param) for param in args.create)
+            except Exception as err:
+                return "wrong read or write parameter specified: {}".format(
+                        args.create)
+            result = OpenDnsModel.create_table(wait=True,
+                                               read_capacity_units=read,
+                                               write_capacity_units=write)
+            if result is None:
+                print("DB already exist:\n")
+                return pprint(OpenDnsModel.describe_table())
+            else:
+                return pprint(result)
+
         elif args.delete:
-            print("deleting database")
+            print("deleting database.. \n")
             return OpenDnsModel.delete_table()
 
     else:
