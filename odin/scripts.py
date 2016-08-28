@@ -7,7 +7,6 @@ Cli tool for odin
 import os
 import argparse
 import queue
-import tempfile
 from pprint import pprint
 from odin.static import __version__
 from odin.utils import run_scan
@@ -104,11 +103,6 @@ def test_args(args):
     targets = utils.findip(args.target)
     # assert len(targets) <= 256 or args.output
     # TODO tests on output file
-    if args.output:
-        assert not os.path.isdir(
-             args.output), 'specify a file, not a directory.'
-        assert tempfile.TemporaryFile(dir=os.path.dirname(args.output)), (
-            'You have no permission to write.')
     assert args.chunk > 1 and args.chunk <= 1024, (
         'You have to specify a chunk between 1 and 1024.')
     result = utils.chunker(targets, args.chunk)
