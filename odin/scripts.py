@@ -71,15 +71,20 @@ def get_args():
                            "It defaults to 'is_resolver'."),
                        required=False, default='is_resolver', type=str)
 
-    # Dump sub parser
-    dump = subparsers.add_parser('dump',)
-    dump.add_argument("-o", "--output", dest="output", action="store",
-                      help="Output file", required=True)
-
-    # Load sub parser
-    load = subparsers.add_parser('load',)
-    load.add_argument("-i", "--input", dest="output", action="store",
-                      help="Input file", required=True)
+    # Db sun parser
+    db = subparsers.add_parser('db',)
+    exclusive = db.add_mutually_exclusive_group(required=True)
+    exclusive.add_argument("--dump", dest="dump", action="store",
+                           help="Output file")
+    exclusive.add_argument("--load", dest="load", action="store",
+                           help="Input file")
+    exclusive.add_argument("--create", dest="create",
+                           nargs=2, metavar=('read', 'write'),
+                           help="{}{}".format(
+                               "Create the DB, if not exists already,",
+                               " giving read and write capacity"))
+    exclusive.add_argument("--delete", action="store_true",
+                           help="delete the DB table")
 
     # Delete sub parser
     delete = subparsers.add_parser('delete',)
@@ -166,29 +171,6 @@ def main():
     elif args.subparser == "query":
         pass
 
-    # LOAD case
-    elif args.subparser == "load":
-        try:
-            OpenDnsModel.load(args.input)
-        except FileNotFoundError:
-            print('{}{}{}'.format(
-                '\nUnable to load data from',
-                args.input,
-                '. are you sure the file exisits?\n')
-                 )
-
-    # DUMP case
-    elif args.subparser == "dump":
-        if os.path.exists(args.output):
-            answer = input(
-                'file {} exist: overwrite? '.format(args.output))
-            if answer in ['yes', 'y']:
-                OpenDnsModel.dump(args.output)
-            else:
-                print('\nnot overwriting the file; print to stout only\n')
-        else:
-            OpenDnsModel.dump(args.output)
-
     # DELETE CASE
     elif args.subparser == "delete":
         targets = utils.findip(args.target)
@@ -207,6 +189,44 @@ def main():
                     batch.delete(ip)
         except Exception as err:
             print("unable to delete the specified ips: {}".format(err))
+
+    # DB manipulation case
+    elif args.subparser == "db":
+
+        if args.load:
+            try:
+                OpenDnsModel.load(args.load)
+            except FileNotFoundError:
+                print('{}{}{}'.format(
+                    '\nUnable to load data from',
+                    args.load,
+                    '. are you sure the file exisits?\n')
+                    )
+                return
+            return "data from '{}' succesfully loaded in DB".format(args._load)
+
+        elif args.dump:
+            if os.path.exists(args.dump):
+                answer = input(
+                    'file {} exist: overwrite? '.format(args.dump))
+                if answer in ['yes', 'y']:
+                    OpenDnsModel.dump(args.dump)
+                else:
+                    print('\nnot overwriting the file; print to stout only\n')
+                    return
+            else:
+                OpenDnsModel.dump(args.dump)
+            return "DB dumped correctly to {} file".format(args._dump)
+
+        elif args.create:
+            print("creating database")
+            read, write = args.create
+            return OpenDnsModel.create_table(wait=True,
+                                             read_capacity_units=read,
+                                             write_capacity_units=write)
+        elif args.delete:
+            print("deleting database")
+            return OpenDnsModel.delete_table()
 
     else:
         parser.print_help()

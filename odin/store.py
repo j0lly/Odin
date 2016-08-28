@@ -12,7 +12,8 @@ from pynamodb.indexes import (GlobalSecondaryIndex, AllProjection)
 from pynamodb.attributes import (UTCDateTimeAttribute, UnicodeAttribute,
                                  BooleanAttribute)
 from odin.worker import Worker
-from odin.static import TABLE, RESOLVERS_GLOBAL_INDEX, CLASS_B_GLOBAL_INDEX
+from odin.static import (TABLE, RESOLVERS_GLOBAL_INDEX, CLASS_B_GLOBAL_INDEX,
+                         CLASSB_RC, CLASSB_WC, RESOLVERS_RC, RESOLVERS_WC)
 
 
 class ClassB(GlobalSecondaryIndex):
@@ -21,8 +22,8 @@ class ClassB(GlobalSecondaryIndex):
     """
     class Meta:
         index_name = CLASS_B_GLOBAL_INDEX
-        read_capacity_units = 5
-        write_capacity_units = 5
+        read_capacity_units = CLASSB_RC
+        write_capacity_units = CLASSB_WC
         # All attributes are projected
         projection = AllProjection()
 
@@ -37,8 +38,8 @@ class ResolversIndex(GlobalSecondaryIndex):
     """
     class Meta:
         index_name = RESOLVERS_GLOBAL_INDEX
-        read_capacity_units = 5
-        write_capacity_units = 5
+        read_capacity_units = RESOLVERS_RC
+        write_capacity_units = RESOLVERS_WC
         # All attributes are projected
         projection = AllProjection()
 
