@@ -96,6 +96,8 @@ def get_args():
     query.add_argument("-l", "--limit", dest="limit", action="store",
                        default=None, type=int,
                        help="Set a limit for results")
+    query.add_argument("-e", "--extended", action="store_true", default=None,
+                       help="if specified show all from returned object")
 
     # Db sun parser
     db = subparsers.add_parser('db', parents=[parser],
@@ -238,7 +240,7 @@ def main():
                         log.debug('storing ip: %s', ip)
                         batch.save(ip)
             except Exception as err:
-                log.error('batch failed to save to db:', exc_info=True)
+                log.error('batch failed to save to db: %s', err, exc_info=True)
                 pass
 
         pprint(printing)
@@ -279,7 +281,10 @@ def main():
                           version_string=version_string, limit=args.limit,
                           negate_version=negate_version):
             log.debug('perform serialization of obj: %s', i.ip)
-            pprint(i.serialize)
+            if args.extended:
+                pprint(i.attribute_values)
+            else:
+                pprint(i.serialize)
 
     # DELETE CASE
     elif args.subparser == "delete":
@@ -294,14 +299,15 @@ def main():
                 objects.append(OpenDnsModel.get(target))
             # obj does not exist
             except Exception as err:
-                log.info('ip: %s does not exist in DB', target)
+                log.info('ip: %s does not exist in DB: %s', target,
+                         err, exc_info=True)
         try:
             with OpenDnsModel.batch_write() as batch:
                 for ip in objects:
                     batch.delete(ip)
         except Exception as err:
-            log.error("unable to delete the specified ips: %s",
-                      err, exc_info=True)
+            log.error("unable to delete the specified ips",
+                      exc_info=True)
             return
         log.info('delete operation finished successfully')
 
@@ -316,10 +322,10 @@ def main():
             try:
                 OpenDnsModel.load(args.load)
             except FileNotFoundError as err:
-                log.fatal('%s%s%s',
-                          '\nUnable to load data from',
+                log.error('%s%s%s',
+                          '\nUnable to load data from ',
                           args.load,
-                          '. are you sure the file exisits?\n')
+                          '. are you sure the file exisits?\n', exc_info=True)
                 return
             log.info('data succefully loaded from %s', args.load)
 
@@ -341,9 +347,9 @@ def main():
             try:
                 read, write = (int(param) for param in args.create)
             except Exception as err:
-                log.fatal(
+                log.error(
                     'wrong read or write parameter specified: %s',
-                    args.create)
+                    args.create, exc_info=True)
                 return
 
             result = OpenDnsModel.create_table(wait=True,

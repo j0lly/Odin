@@ -135,6 +135,7 @@ class OpenDnsModel(Worker, Model):
             timestamp=arrow.get(
                 self.timestamp).format(
                     'YYYY-MM-DD HH:mm:ss ZZ'))
+        log.debug('serialize property called sucessfully')
         return result
 
 
@@ -159,10 +160,13 @@ class ThreadedModel(OpenDnsModel, threading.Thread):
         :param timeout: timeout to apply to block before raising Full exception
         :type timeout: int
         """
+        log.info('performing a dns scan operation')
         self.dns_scan(version)
         try:
             self.queue.put(self, block, timeout)
-        except queue.Full:
-            # TODO: logging here
-            pass
+            log.debug('scanned object put into the queue')
+        except queue.Full as err:
+            log.debug('unable to put new scan result in queue, ignoring %s',
+                      err,
+                      exc_info=True)
         self.queue.task_done()

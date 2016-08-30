@@ -21,13 +21,19 @@ def findip(string):
     """
     try:
         ip_range = ipaddress.IPv4Network(string, strict=False)
-    except ipaddress.AddressValueError:
+    except ipaddress.AddressValueError as err:
+        log.error('%s', err, exc_info=True)
         raise
-    except ipaddress.NetmaskValueError:
+    except ipaddress.NetmaskValueError as err:
+        log.error('%s', err, exc_info=True)
         raise
     if ip_range.num_addresses == 1:
+        log.debug('value resulted in a single host ip: %s',
+                  ip_range.network_address.compressed)
         return [ip_range.network_address.compressed]
     else:
+        log.debug('value resulted in a muliple host list for %s',
+                  string)
         return [k.compressed for k in ip_range.hosts()]
 
 
@@ -42,6 +48,7 @@ def chunker(iterable, chunk_size=16):
     :rtype: generator
     """
     for x in range(0, len(iterable), chunk_size):
+        log.debug('yielding %s', iterable[x:x+chunk_size])
         yield iterable[x:x+chunk_size]
 
 
