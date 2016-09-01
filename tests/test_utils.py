@@ -52,7 +52,7 @@ class TestRunScan:
     """ testing a function that use threads and other voodoos... """
     # FIXME 1 day create also test fr multiple targets
 
-    def test_run_scan_filter_all(self):
+    def test_run_scan(self):
         scanned_ip = {
                     "class_b": "82.81",
                     "ip": "82.81.118.81",
@@ -71,30 +71,6 @@ class TestRunScan:
         queue = Mock()
         queue.empty.side_effect = [False, True]
         queue.get.return_value = m_cls
-        assert list(run_scan('all', queue,
+        assert list(run_scan(queue,
                              [["82.81.118.81"]],
                              cls=m_cls)) == [m_cls]
-
-    def test_run_scan_filter_is_dns_not(self):
-        scanned_ip = {
-                    "class_b": "82.81",
-                    "ip": "82.81.118.81",
-                    "is_dns": False,
-                    "is_resolver": False,
-                    "timestamp": "2016-08-27 13:09:38 -00:00",
-                    "version": None,
-                    }
-
-        m_cls = Mock
-        m_cls.start = Mock
-        m_cls.join = Mock
-        m_cls.attribute_values = scanned_ip
-        m_cls.serialize = scanned_ip
-        m_cls.ip = scanned_ip['ip']
-        m_cls.is_dns = scanned_ip['is_dns']
-        queue = Mock()
-        queue.empty.side_effect = [True]
-        queue.get.return_value = m_cls
-        assert list(run_scan('is_dns', queue,
-                             [['192.168.0.1']],
-                             cls=m_cls)) == []

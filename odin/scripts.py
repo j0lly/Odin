@@ -170,21 +170,6 @@ def do_query(subject, index=None,
                 yield ip
 
 
-def load_data():
-    """ load data into the DB; can get data from file
-    data has to be formatted as json with the following syntax:
-        {'192.168.0.1': { 'ip': '192.168.0.1',
-                          'is_dns': True,
-                          'is_resolver': True,
-                          'netmask': '192.168',
-                          'timestamp': ###,
-                          'version': 'dnsmasq-2.70'
-                        }
-        }
-    """
-    pass
-
-
 def main():
     """ the main script."""
 
@@ -227,7 +212,7 @@ def main():
         result = []
         printing = {}
 
-        for obj in run_scan(args.filter, my_queue, targets):
+        for obj in run_scan(my_queue, targets):
             log.debug('adding %s to the resultset', obj.ip)
             printing[obj.ip] = obj.serialize
             result.append(obj)

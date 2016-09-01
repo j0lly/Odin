@@ -89,7 +89,7 @@ def net_scan():
     try:
         # TODO add throttling, use celery
         result = []
-        for obj in run_scan('all', my_queue, ip_list):
+        for obj in run_scan(my_queue, ip_list):
             result.append(obj)
     except:
         return 'failed to scan the ip list provided', 400

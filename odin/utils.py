@@ -52,10 +52,9 @@ def chunker(iterable, chunk_size=16):
         yield iterable[x:x+chunk_size]
 
 
-def run_scan(filter, queue, targets, cls=ThreadedModel):
+def run_scan(queue, targets, cls=ThreadedModel):
     """ Run a scan against targets and return a Pynamo modeled list of objects.
-    :param filter: chose how any attributes to store in the reply
-    :type args: str
+
     :queue: a queue
     :type queue: queue.Queue
     :param targets: list of ips, divided in chunks if necessary
