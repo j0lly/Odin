@@ -70,7 +70,9 @@ def get_args():
     scan.add_argument("--store", action="store_true",
                       help="if specified store the result in Dynamo")
     scan.add_argument("--dump", action="store_true",
-                      help="if specified dump the result into randomly generated file in CWD")
+                      help="{}{}".format(
+                          "if specified dump the result ",
+                          "into randomly generated file in CWD"))
 
     # Query sub parser
     query = subparsers.add_parser('query', parents=[parser],
@@ -225,7 +227,8 @@ def main():
             log.info('dump flag passed: saving results to file..')
             filename = str(uuid.uuid4())
             with open(filename, 'w') as f:
-                json.dump([r.serialize for r in result if r.serialize['is_dns']], f)
+                json.dump(
+                    [r.serialize for r in result if r.serialize['is_dns']], f)
 
         if args.store:
             log.info('store flag passed: saving results into the DB..')
