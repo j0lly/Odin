@@ -131,6 +131,11 @@ class OpenDnsModel(Worker, Model):
         """ take important values and prepare them form printing """
         result = dict(
             ip=self.ip,
+            class_a=self.class_a,
+            class_b=self.class_b,
+            class_c=self.class_c,
+            is_dns=self.is_dns,
+            is_resolver=self.is_resolver,
             version=self.version,
             timestamp=arrow.get(
                 self.timestamp).format(

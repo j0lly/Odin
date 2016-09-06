@@ -8,6 +8,8 @@ import os
 import argparse
 import queue
 import logging
+import uuid
+import json
 from pprint import pprint
 import odin
 from odin.static import __version__
@@ -67,6 +69,8 @@ def get_args():
                       required=False, default='is_resolver', type=str)
     scan.add_argument("--store", action="store_true",
                       help="if specified store the result in Dynamo")
+    scan.add_argument("--dump", action="store_true",
+                      help="if specified dump the result into randomly generated file in CWD")
 
     # Query sub parser
     query = subparsers.add_parser('query', parents=[parser],
@@ -197,8 +201,8 @@ def main():
         targets = utils.findip(args.target)
         log.debug('list of ip to be scanned: %s', targets)
 
-        assert args.chunk > 1 and args.chunk <= 1024, (
-            'You have to specify a chunk between 1 and 1024.')
+        assert args.chunk > 1 and args.chunk <= 2048, (
+            'You have to specify a chunk between 1 and 2048.')
         targets = utils.chunker(targets, args.chunk)
 
         assert args.filter in ['is_dns',
@@ -216,6 +220,12 @@ def main():
             log.debug('adding %s to the resultset', obj.ip)
             printing[obj.ip] = obj.serialize
             result.append(obj)
+
+        if args.dump:
+            log.info('dump flag passed: saving results to file..')
+            filename = str(uuid.uuid4())
+            with open(filename, 'w') as f:
+                json.dump([r.serialize for r in result if r.serialize['is_dns']], f)
 
         if args.store:
             log.info('store flag passed: saving results into the DB..')
@@ -261,15 +271,15 @@ def main():
             'cheking version params: version_string %s, negate_version %s',
             version_string, negate_version)
 
-        for i in do_query(args.type, index=class_range,
-                          nets=nets, scan_index_forward=args.reversed,
-                          version_string=version_string, limit=args.limit,
-                          negate_version=negate_version):
-            log.debug('perform serialization of obj: %s', i.ip)
+        for result in do_query(args.type, index=class_range,
+                               nets=nets, scan_index_forward=args.reversed,
+                               version_string=version_string, limit=args.limit,
+                               negate_version=negate_version):
+            log.debug('perform serialization of obj: %s', result.ip)
             if args.extended:
-                pprint(i.attribute_values)
+                pprint(result.serialize)
             else:
-                pprint(i.serialize)
+                pprint({'ip': result.ip, 'version': result.version})
 
     # DELETE CASE
     elif args.subparser == "delete":
@@ -353,7 +363,7 @@ def main():
             return pprint(result)
 
         elif args.modify:
-            # TODO mafe a function I saved output because no documentation is
+            # TODO make a function I saved output because no documentation is
             # there
             # q=TableConnection(table_name='OpenDns',
             #         host='http://127.0.0.1:8000')
