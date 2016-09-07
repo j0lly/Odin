@@ -70,7 +70,7 @@ class Worker(object):
             return None
         except dns.resolver.NoAnswer:
             return None
-        return answer[0].strings[0]  # return version string for NS
+        return answer[0].strings[0].decode()  # return version string for NS
 
     def dns_scan(self, version=True):
         """ make a simple scan.

@@ -144,18 +144,18 @@ class OpenDnsModel(Worker, Model):
         return result
 
 
-class ThreadedModel(OpenDnsModel, threading.Thread):
+class ThreadedModel(threading.Thread):
     """ Model for dns objects """
-    class Meta:
-        table_name = TABLE
-        host = 'http://127.0.0.1:8000'
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         threading.Thread.__init__(self)
-        self.queue = kwargs.pop('queue')
-        super(ThreadedModel, self).__init__(*args, **kwargs)
+        self.queue = kwargs['queue']
+        self.object = kwargs['object']
+        self.version = kwargs.get('version', True)
+        self.block = kwargs.get('block', True)
+        self.timeout = kwargs.get('timeout', 2)
 
-    def run(self, version=True, block=True, timeout=2):
+    def run(self):
         """ overwrite run method with our
 
         :param version: tell dns_scan method to scan for dns server version
@@ -166,9 +166,9 @@ class ThreadedModel(OpenDnsModel, threading.Thread):
         :type timeout: int
         """
         log.info('performing a dns scan operation')
-        self.dns_scan(version)
+        self.object.dns_scan(self.version)
         try:
-            self.queue.put(self, block, timeout)
+            self.queue.put(self.object, self.block, self.timeout)
             log.debug('scanned object put into the queue')
         except queue.Full as err:
             log.debug('unable to put new scan result in queue, ignoring %s',

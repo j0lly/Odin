@@ -5,7 +5,7 @@
 import ipaddress
 import json
 import odin
-from odin.store import ThreadedModel
+from odin.store import ThreadedModel, OpenDnsModel
 
 # Default logging capabilities (logging nowhere)
 log = odin.get_logger()
@@ -68,7 +68,7 @@ def run_scan(queue, targets, cls=ThreadedModel):
     for chunk in targets:
         threads = []
         for ip in chunk:
-            obj = cls(ip, queue=queue)
+            obj = cls(object=OpenDnsModel(ip), queue=queue)
             obj.daemon = True
             threads.append(obj)
         for thread in threads:

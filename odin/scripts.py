@@ -15,6 +15,7 @@ import odin
 from odin.static import __version__
 from odin.utils import (run_scan, assembler, get_filter)
 from odin.store import OpenDnsModel
+from odin.tasks import odin_store
 from odin import utils
 
 # Default logging capabilities (logging nowhere)
@@ -232,14 +233,7 @@ def main():
 
         if args.store:
             log.info('store flag passed: saving results into the DB..')
-            try:
-                with OpenDnsModel.batch_write() as batch:
-                    for ip in result:
-                        log.debug('storing ip: %s', ip)
-                        batch.save(ip)
-            except Exception as err:
-                log.error('batch failed to save to db: %s', err, exc_info=True)
-                pass
+            odin_store.delay(result)
 
         pprint(printing)
 

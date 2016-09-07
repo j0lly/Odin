@@ -43,22 +43,22 @@ class TestWoker:
     def test_dns_version_no_timeout(self, m_dns):
         answers = []
         record = Mock
-        record.strings = ['some', 'other stuff']
+        record.strings = ['some'.encode(), 'other stuff'.encode()]
         answers.append(record)
         m_dns().query.return_value = answers
         worker = Worker(IP)
         assert worker._resolver.timeout == 1
-        assert worker.dns_version() == answers[0].strings[0]
+        assert worker.dns_version() == answers[0].strings[0].decode()
 
     def test_dns_version_with_timeout(self, m_dns):
         answers = []
         record = Mock
-        record.strings = ['some', 'other stuff']
+        record.strings = ['some'.encode(), 'other stuff'.encode()]
         answers.append(record)
         m_dns().query.return_value = answers
         worker = Worker(IP)
         assert worker._resolver.timeout == 1
-        assert worker.dns_version(timeout=2) == answers[0].strings[0]
+        assert worker.dns_version(timeout=2) == answers[0].strings[0].decode()
         assert worker._resolver.timeout == 2
 
     def test_dns_version_NoNameservers(self, m_dns):
@@ -74,7 +74,7 @@ class TestWoker:
     def test_dns_scan(self, m_dns):
         answers = []
         record = Mock
-        record.strings = ['some version', 'other stuff']
+        record.strings = ['some version'.encode(), 'other stuff'.encode()]
         answers.append(record)
         m_dns().query.side_effect = [True, answers]
         worker = Worker(IP)
