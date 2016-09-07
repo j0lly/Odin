@@ -9,8 +9,8 @@ import flask
 from flask import request, Response, Blueprint
 import odin
 from odin.store import OpenDnsModel
-from odin.utils import (findip, run_scan,
-                        generate_serialized_results, chunker)
+from odin.core import do_scan
+from odin.utils import generate_serialized_results
 
 
 # Default logging capabilities (logging nowhere)
@@ -73,34 +73,15 @@ def show_endpoint(ip):
 def net_scan():
     """Perform a scan of a CIDR range provided as param and return it."""
 
-    # FIXME moving to celery or similar
     my_queue = queue.Queue()
     ip_range = request.json
     try:
         network = ip_range['network']
     except Exception:
         return 'no range parameter specified!', 400
-    try:
-        ip_list = findip(network)
-        ip_list = chunker(ip_list)
-    except Exception:
-        return 'invalid ip range provided!', 400
 
-    try:
-        # TODO add throttling, use celery
-        result = []
-        for obj in run_scan(my_queue, ip_list):
-            result.append(obj)
-    except:
-        return 'failed to scan the ip list provided', 400
-    try:
-        with OpenDnsModel.batch_write() as batch:
-            for ip in result:
-                batch.save(ip)
-    except:
-        return 'batch failed to save to db', 400
+    results = do_scan(network, my_queue, chunk_number=512)
 
-    retval = {}
-    for obj in result:
-        retval.update({obj.ip: obj.serialize})
-    return flask.jsonify(retval)
+    return Response(generate_serialized_results(
+        results, output='json'),
+                    mimetype='application/json'), 201

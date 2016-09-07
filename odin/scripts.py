@@ -9,13 +9,12 @@ import argparse
 import queue
 import logging
 import uuid
-import json
 from pprint import pprint
 import odin
 from odin.static import __version__
-from odin.utils import (run_scan, assembler, get_filter)
+from odin.utils import (assembler, get_filter)
 from odin.store import OpenDnsModel
-from odin.tasks import odin_store
+from odin.core import do_scan
 from odin import utils
 
 # Default logging capabilities (logging nowhere)
@@ -201,12 +200,13 @@ def main():
     if args.subparser == "scan":
         log.info('Preparing for scanning..')
 
-        targets = utils.findip(args.target)
-        log.debug('list of ip to be scanned: %s', targets)
+        if args.dump:
+            filename = str(uuid.uuid4())
+        else:
+            filename = None
 
         assert args.chunk > 1 and args.chunk <= 2048, (
             'You have to specify a chunk between 1 and 2048.')
-        targets = utils.chunker(targets, args.chunk)
 
         assert args.filter in ['is_dns',
                                'is_resolver',
@@ -214,28 +214,13 @@ def main():
                                'all'], ('{}{}'.format(
                                    'You have to specify a filter in:',
                                    ' is_dns, is_resolver, version, all.'))
-
         my_queue = queue.Queue()
-        result = []
-        printing = {}
 
-        for obj in run_scan(my_queue, targets):
-            log.debug('adding %s to the resultset', obj.ip)
-            printing[obj.ip] = obj.serialize
-            result.append(obj)
+        for result in do_scan(args.target, my_queue,
+                              chunk_number=args.chunk, store=args.store,
+                              dump=args.dump, filename=filename):
 
-        if args.dump:
-            log.info('dump flag passed: saving results to file..')
-            filename = str(uuid.uuid4())
-            with open(filename, 'w') as f:
-                json.dump(
-                    [r.serialize for r in result if r.serialize['is_dns']], f)
-
-        if args.store:
-            log.info('store flag passed: saving results into the DB..')
-            odin_store.delay(result)
-
-        pprint(printing)
+            pprint(result.serialize)
 
     # QUERY case
     elif args.subparser == "query":

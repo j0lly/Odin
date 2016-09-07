@@ -156,15 +156,9 @@ class ThreadedModel(threading.Thread):
         self.timeout = kwargs.get('timeout', 2)
 
     def run(self):
-        """ overwrite run method with our
-
-        :param version: tell dns_scan method to scan for dns server version
-        :type version: bool
-        :param block: tell the queue to block until queue can accept item
-        :type block: bool
-        :param timeout: timeout to apply to block before raising Full exception
-        :type timeout: int
+        """ override run method
         """
+
         log.info('performing a dns scan operation')
         self.object.dns_scan(self.version)
         try:

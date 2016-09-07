@@ -4,6 +4,8 @@
 Async classes
 """
 
+import uuid
+import json
 from celery import Celery
 import odin
 from odin.store import OpenDnsModel
@@ -29,3 +31,9 @@ def odin_store(resultset):
         pass
 
     return True
+
+
+@async.task
+def odin_dump(resultset, filename=str(uuid.uuid4())):
+    with open(filename, 'wa') as f:
+        json.dump([r.serialize for r in resultset if r.serialize['is_dns']], f)

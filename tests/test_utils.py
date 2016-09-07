@@ -72,5 +72,5 @@ class TestRunScan:
         queue.empty.side_effect = [False, True]
         queue.get.return_value = m_cls
         assert list(run_scan(queue,
-                             [["82.81.118.81"]],
+                             ["82.81.118.81"],
                              cls=m_cls)) == [m_cls]

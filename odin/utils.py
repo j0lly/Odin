@@ -57,28 +57,27 @@ def run_scan(queue, targets, cls=ThreadedModel):
 
     :queue: a queue
     :type queue: queue.Queue
-    :param targets: list of ips, divided in chunks if necessary
+    :param targets: list of ips
     :type targets: list
-    :param cls: class to be used for resolution and threading
+    :param cls: class to be used for threading job
     :type cls: class object
     :returns: yield a list of pynamo objects
     :rtype: generator
     """
 
-    for chunk in targets:
-        threads = []
-        for ip in chunk:
-            obj = cls(object=OpenDnsModel(ip), queue=queue)
-            obj.daemon = True
-            threads.append(obj)
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join(timeout=2)
+    threads = []
+    for ip in targets:
+        obj = cls(object=OpenDnsModel(ip), queue=queue)
+        obj.daemon = True
+        threads.append(obj)
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=2)
 
-        while not queue.empty():
-            ip_info = queue.get()
-            yield ip_info
+    while not queue.empty():
+        ip_info = queue.get()
+        yield ip_info
 
 
 def generate_serialized_results(query, output='json'):
