@@ -9,14 +9,15 @@ import json
 from celery import Celery
 import odin
 from odin.store import OpenDnsModel
+from odin.static import CELERY_BE, CELERY_BK
 
 # Default logging capabilities (logging nowhere)
 log = odin.get_logger()
 
 
 async = Celery('tasks',
-               backend='redis://localhost:6379',
-               broker='redis://localhost:6379')
+               backend=CELERY_BE,
+               broker=CELERY_BK)
 
 
 @async.task

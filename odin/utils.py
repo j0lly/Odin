@@ -61,7 +61,7 @@ def run_scan(queue, targets, cls=ThreadedModel):
     :type targets: list
     :param cls: class to be used for threading job
     :type cls: class object
-    :returns: yield a list of pynamo objects
+    :returns: yield a pynamo objects
     :rtype: generator
     """
 

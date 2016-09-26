@@ -15,6 +15,22 @@ log = odin.get_logger()
 def do_scan(target, queue,
             chunk_number=25, store=True,
             dump=False, filename=None):
+    """ this function perform a dns scan and optionally store results in DB
+    and/or dump them to file
+
+    :param target: cidr range
+    :type target: str
+    :param queue: queue object to use for multithreading
+    :type queue: queue.Queue
+    :param chunk_number: number of object per chunk to use for the scan
+    :type chunl_number: int
+    :param store: if set, store results in DB
+    :type store: bool
+    :param dump: if set, dump results to file
+    :type dump: bool
+    :param filename: name of the file to dump data to
+    :type filename: str
+    """
 
     targets = utils.findip(target)
     log.debug('list of ip to be scanned: %s', targets)

@@ -23,3 +23,5 @@ RESOLVERS_RC = 5
 RESOLVERS_WC = 5
 DNS_RC = 5
 DNS_WC = 5
+CELERY_BE = 'redis://localhost:6379'
+CELERY_BK = 'redis://localhost:6379'

@@ -6,7 +6,7 @@ A micro WebService that implement standard methods to batch
 scan the network and find Open DNS resolvers, storing results in convenient way
 
 :copyright: (c) 2016 by J0lly.
-:license: BSD, see LICENSE for more details.
+:license: BSD, see LICENSE.txt for more details.
 """
 
 import logging
