@@ -20,7 +20,7 @@ class Worker(object):
     version = None
     timestamp = datetime.datetime.now()
 
-    def __init__(self, ip, *args, timeout=1, lifetime=1, **kwargs):
+    def __init__(self, ip, timeout=1, lifetime=1, *args, **kwargs):
         super(Worker, self).__init__(*args, **kwargs)
         self.ip = ip
         self._resolver = dns.resolver.Resolver()

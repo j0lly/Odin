@@ -163,7 +163,7 @@ def do_query(subject, index=None,
 
     if len(nets) is 0:
         log.info('performing a single query for %s type', subject)
-        for ip in query_over.query(1, **query,):
+        for ip in query_over.query(1, **query):
             log.debug('returned ip: %s', ip.ip)
             yield ip
     else:
@@ -171,7 +171,7 @@ def do_query(subject, index=None,
         for net in nets:
             log.debug('query for net: %s', net)
             query.update({index + '__eq': str(net)})
-            for ip in query_over.query(1, **query,):
+            for ip in query_over.query(1, **query):
                 log.debug('returned ip: %s', ip.ip)
                 yield ip
 
@@ -319,7 +319,7 @@ def main():
             log.info('preparing to load dataset from file..')
             try:
                 OpenDnsModel.load(args.load)
-            except FileNotFoundError as err:
+            except IOError as err:
                 log.error('%s%s%s',
                           '\nUnable to load data from ',
                           args.load,

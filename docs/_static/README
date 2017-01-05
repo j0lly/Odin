@@ -1,0 +1,2 @@
+# Remove this after you buil dyour docs
+# Sphinx complain if this directory doesn't exist on docs build time
