@@ -2,7 +2,7 @@ Odin: Open Dns  INspector
 ===
 
 [![Build Status](https://travis-ci.org/j0lly/Odin.svg?branch=master)](https://travis-ci.org/j0lly/Odin)
-[![Coverage Status](https://coveralls.io/repos/github/j0lly/Odin/badge.svg?branch=master)](https://coveralls.io/github/j0lly/Odin?branch=master)
+[![Codecov](https://img.shields.io/codecov/c/github/j0lly/Odin.svg)](https://codecov.io/gh/j0lly/Odin)
 
 This is a simple Open DNS crawler that aim to surf the net and find open dns resolvers
 
